@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Marrooks · Lista de tarefas</title>
+    <style>
+      :root {
+        --terracotta: #be5b3d;
+        --terracotta-dark: #9c482f;
+        --coral: #e8896b;
+        --cream: #fbf3ea;
+        --paper: #fffdf9;
+        --ink: #2e241d;
+        --ink-soft: #7a6b5d;
+        --line: #e7d7c6;
+        --sage: #8a9574;
+        --radius: 14px;
+        --shadow: 0 8px 24px rgba(46, 36, 29, 0.1);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: transparent;
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--ink);
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 32px 16px;
+      }
+      @media (max-width: 480px) {
+        body {
+          padding: 20px 12px;
+        }
+      }
+      .wrap {
+        width: 100%;
+        max-width: 420px;
+      }
+
+      /* ---------- Card (lock / setup) ---------- */
+      .card {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 36px 28px 28px;
+        position: relative;
+        overflow: hidden;
+        animation: rise 0.35s ease;
+      }
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .card,
+        .item,
+        .toast {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+
+      .tape {
+        position: absolute;
+        top: -10px;
+        left: 24px;
+        width: 70px;
+        height: 26px;
+        background: linear-gradient(135deg, var(--terracotta), var(--coral));
+        opacity: 0.85;
+        transform: rotate(-6deg);
+        border-radius: 2px;
+      }
+
+      .brand {
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        margin: 14px 0 2px;
+      }
+      .sub {
+        color: var(--ink-soft);
+        font-size: 0.92rem;
+        margin: 0 0 22px;
+      }
+
+      label.field-label {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--ink-soft);
+        margin: 0 0 6px;
+      }
+      input[type='password'],
+      input[type='text'] {
+        width: 100%;
+        font-size: 1rem;
+        padding: 12px 14px;
+        border: 1.5px solid var(--line);
+        border-radius: 10px;
+        background: var(--cream);
+        color: var(--ink);
+        outline: none;
+        transition: border-color 0.15s ease;
+        font-family: inherit;
+      }
+      input[type='password']:focus,
+      input[type='text']:focus {
+        border-color: var(--terracotta);
+      }
+      .field {
+        margin-bottom: 14px;
+      }
+
+      button {
+        font-family: inherit;
+        cursor: pointer;
+      }
+      .btn-primary {
+        width: 100%;
+        background: var(--terracotta);
+        color: #fff;
+        border: none;
+        padding: 13px 16px;
+        border-radius: 10px;
+        font-size: 0.98rem;
+        font-weight: 600;
+        margin-top: 6px;
+        transition:
+          background 0.15s ease,
+          transform 0.05s ease;
+      }
+      .btn-primary:hover {
+        background: var(--terracotta-dark);
+      }
+      .btn-primary:active {
+        transform: scale(0.98);
+      }
+      .btn-link {
+        background: none;
+        border: none;
+        color: var(--ink-soft);
+        font-size: 0.85rem;
+        padding: 4px;
+        text-decoration: underline;
+      }
+
+      .error-msg {
+        color: var(--terracotta-dark);
+        font-size: 0.85rem;
+        margin: -6px 0 12px;
+        min-height: 1em;
+      }
+      .shake {
+        animation: shake 0.35s ease;
+      }
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-6px);
+        }
+        75% {
+          transform: translateX(6px);
+        }
+      }
+
+      /* ---------- App screen ---------- */
+      .app-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+      }
+      .app-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+      }
+      .app-title span {
+        font-size: 1rem;
+        margin-right: 4px;
+      }
+      .app-actions {
+        display: flex;
+        gap: 6px;
+      }
+      .icon-btn {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        color: var(--ink-soft);
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .icon-btn:hover {
+        border-color: var(--terracotta);
+        color: var(--terracotta);
+      }
+
+      .add-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+      .add-row input {
+        flex: 1;
+      }
+      .add-btn {
+        width: 46px;
+        flex-shrink: 0;
+        background: var(--terracotta);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.4rem;
+        line-height: 1;
+      }
+      .add-btn:hover {
+        background: var(--terracotta-dark);
+      }
+
+      .list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 11px 12px;
+        animation: rise 0.2s ease;
+      }
+      .check {
+        width: 21px;
+        height: 21px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        border: 1.5px solid var(--ink-soft);
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        color: transparent;
+      }
+      .item.done .check {
+        background: var(--sage);
+        border-color: var(--sage);
+        color: #fff;
+      }
+      .item-text {
+        flex: 1;
+        font-size: 0.96rem;
+        word-break: break-word;
+      }
+      .item.done .item-text {
+        text-decoration: line-through;
+        color: var(--ink-soft);
+      }
+      .del-btn {
+        background: none;
+        border: none;
+        color: var(--ink-soft);
+        font-size: 1.1rem;
+        padding: 2px 6px;
+        flex-shrink: 0;
+      }
+      .del-btn:hover {
+        color: var(--terracotta-dark);
+      }
+
+      .empty {
+        text-align: center;
+        color: var(--ink-soft);
+        font-size: 0.9rem;
+        padding: 36px 12px;
+      }
+      .empty .em {
+        font-size: 1.8rem;
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .footer-count {
+        text-align: center;
+        color: var(--ink-soft);
+        font-size: 0.8rem;
+        margin-top: 16px;
+      }
+
+      .loading {
+        text-align: center;
+        color: var(--ink-soft);
+        font-size: 0.9rem;
+        padding: 60px 0;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 16px;
+        background: var(--cream);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 4px;
+      }
+      .tab-btn {
+        flex: 1;
+        background: none;
+        border: none;
+        padding: 9px 10px;
+        border-radius: 7px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: var(--ink-soft);
+      }
+      .tab-btn.active {
+        background: var(--paper);
+        color: var(--terracotta-dark);
+        box-shadow: 0 1px 3px rgba(46, 36, 29, 0.08);
+      }
+
+      .notes-area {
+        width: 100%;
+        min-height: 280px;
+        resize: vertical;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--paper);
+        padding: 14px;
+        font-family: inherit;
+        font-size: 0.95rem;
+        color: var(--ink);
+        line-height: 1.5;
+        outline: none;
+      }
+      .notes-area:focus {
+        border-color: var(--terracotta);
+      }
+      .notes-status {
+        text-align: right;
+        font-size: 0.78rem;
+        color: var(--ink-soft);
+        margin-top: 6px;
+        min-height: 1em;
+      }
+
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 22px;
+        transform: translateX(-50%);
+        background: var(--ink);
+        color: #fff;
+        padding: 10px 16px;
+        border-radius: 9px;
+        font-size: 0.85rem;
+        box-shadow: var(--shadow);
+        animation: rise 0.2s ease;
+        z-index: 10;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div id="screen-loading" class="loading">Carregando…</div>
+
+      <!-- Setup screen: first time, create a password -->
+      <div id="screen-setup" class="card hidden">
+        <div class="tape"></div>
+        <div class="brand">📚 Marrooks</div>
+        <p class="sub">Primeira vez por aqui — crie uma senha para proteger a lista de vocês.</p>
+        <div class="field">
+          <label class="field-label">Nova senha</label>
+          <input type="password" id="setup-pass1" placeholder="Digite uma senha" />
+        </div>
+        <div class="field">
+          <label class="field-label">Confirmar senha</label>
+          <input type="password" id="setup-pass2" placeholder="Repita a senha" />
+        </div>
+        <div class="error-msg" id="setup-error"></div>
+        <button class="btn-primary" id="setup-submit">Criar senha e continuar</button>
+      </div>
+
+      <!-- Lock screen: enter existing password -->
+      <div id="screen-lock" class="card hidden">
+        <div class="tape"></div>
+        <div class="brand">📚 Marrooks</div>
+        <p class="sub">Digite a senha para ver a lista.</p>
+        <div class="field">
+          <input type="password" id="lock-pass" placeholder="Senha" />
+        </div>
+        <div class="error-msg" id="lock-error"></div>
+        <button class="btn-primary" id="lock-submit">Entrar</button>
+      </div>
+
+      <!-- Change password screen -->
+      <div id="screen-change" class="card hidden">
+        <div class="tape"></div>
+        <div class="brand">🔑 Trocar senha</div>
+        <p class="sub">Defina uma nova senha para a lista.</p>
+        <div class="field">
+          <label class="field-label">Nova senha</label>
+          <input type="password" id="change-pass1" placeholder="Digite uma senha" />
+        </div>
+        <div class="field">
+          <label class="field-label">Confirmar senha</label>
+          <input type="password" id="change-pass2" placeholder="Repita a senha" />
+        </div>
+        <div class="error-msg" id="change-error"></div>
+        <button class="btn-primary" id="change-submit">Salvar nova senha</button>
+        <button
+          class="btn-link"
+          id="change-cancel"
+          style="width: 100%; text-align: center; margin-top: 8px"
+        >
+          Cancelar
+        </button>
+      </div>
+
+      <!-- Main app -->
+      <div id="screen-app" class="hidden">
+        <div class="app-header">
+          <div class="app-title"><span>📚</span>Marrooks</div>
+          <div class="app-actions">
+            <button
+              class="icon-btn"
+              id="btn-change-pass"
+              title="Trocar senha"
+              aria-label="Trocar senha"
+            >
+              🔑
+            </button>
+            <button class="icon-btn" id="btn-lock" title="Bloquear" aria-label="Bloquear">
+              🔒
+            </button>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <button class="tab-btn active" id="tab-btn-todos" data-tab="todos">Tarefas</button>
+          <button class="tab-btn" id="tab-btn-notes" data-tab="notes">Anotações</button>
+        </div>
+
+        <div id="tab-todos">
+          <div class="add-row">
+            <input type="text" id="new-todo" placeholder="Adicionar tarefa…" maxlength="200" />
+            <button class="add-btn" id="add-btn" aria-label="Adicionar">+</button>
+          </div>
+
+          <div class="list" id="list"></div>
+          <div class="empty hidden" id="empty">
+            <span class="em">🗒️</span>
+            Nada por aqui ainda.<br />Adicione a primeira tarefa!
+          </div>
+
+          <div class="footer-count" id="footer-count"></div>
+        </div>
+
+        <div id="tab-notes" class="hidden">
+          <textarea
+            class="notes-area"
+            id="notes-area"
+            placeholder="Escreva aqui — ideias, fornecedores, links, o que for…"
+          ></textarea>
+          <div class="notes-status" id="notes-status"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      ;(function () {
+        const API_BASE = '/api'
+        let currentPassword = null
+
+        const screens = {
+          loading: document.getElementById('screen-loading'),
+          setup: document.getElementById('screen-setup'),
+          lock: document.getElementById('screen-lock'),
+          change: document.getElementById('screen-change'),
+          app: document.getElementById('screen-app'),
+        }
+
+        function show(name) {
+          Object.values(screens).forEach(el => el.classList.add('hidden'))
+          screens[name].classList.remove('hidden')
+        }
+
+        function toast(msg) {
+          const t = document.createElement('div')
+          t.className = 'toast'
+          t.textContent = msg
+          document.body.appendChild(t)
+          setTimeout(() => t.remove(), 2600)
+        }
+
+        async function apiStatus() {
+          try {
+            const res = await fetch(API_BASE + '/status')
+            if (!res.ok) return null
+            return await res.json()
+          } catch (e) {
+            return null
+          }
+        }
+        async function apiSetup(password) {
+          try {
+            const res = await fetch(API_BASE + '/setup', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ password }),
+            })
+            return res.ok
+          } catch (e) {
+            return false
+          }
+        }
+        async function apiCheck(password) {
+          try {
+            const res = await fetch(API_BASE + '/check', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ password }),
+            })
+            if (!res.ok) return false
+            const json = await res.json()
+            return !!json.ok
+          } catch (e) {
+            return false
+          }
+        }
+        async function apiChangePassword(oldPassword, newPassword) {
+          try {
+            const res = await fetch(API_BASE + '/change-password', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ password: oldPassword, newPassword }),
+            })
+            return res.ok
+          } catch (e) {
+            return false
+          }
+        }
+        async function apiGetData() {
+          try {
+            const res = await fetch(API_BASE + '/data', {
+              headers: { 'x-todo-password': currentPassword || '' },
+            })
+            if (!res.ok) return null
+            return await res.json()
+          } catch (e) {
+            return null
+          }
+        }
+        async function apiSaveData(partial) {
+          try {
+            const res = await fetch(API_BASE + '/data', {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-todo-password': currentPassword || '',
+              },
+              body: JSON.stringify(partial),
+            })
+            if (!res.ok) {
+              toast('Não foi possível salvar. Tente de novo.')
+              return false
+            }
+            return true
+          } catch (e) {
+            toast('Não foi possível salvar. Verifique sua conexão.')
+            return false
+          }
+        }
+
+        let todos = []
+        let notesSaveTimer = null
+
+        function renderList() {
+          const list = document.getElementById('list')
+          const empty = document.getElementById('empty')
+          const footer = document.getElementById('footer-count')
+
+          if (todos.length === 0) {
+            list.innerHTML = ''
+            empty.classList.remove('hidden')
+            footer.textContent = ''
+            return
+          }
+          empty.classList.add('hidden')
+
+          list.innerHTML = todos
+            .map(
+              t => `
+      <div class="item ${t.done ? 'done' : ''}" data-id="${t.id}">
+        <button class="check" data-action="toggle" aria-label="Concluir">✓</button>
+        <span class="item-text">${escapeHtml(t.text)}</span>
+        <button class="del-btn" data-action="delete" aria-label="Excluir">✕</button>
+      </div>
+    `,
+            )
+            .join('')
+
+          const pending = todos.filter(t => !t.done).length
+          const done = todos.length - pending
+          footer.textContent = `${pending} pendente${pending !== 1 ? 's' : ''} · ${done} concluída${done !== 1 ? 's' : ''}`
+        }
+
+        function escapeHtml(str) {
+          const d = document.createElement('div')
+          d.textContent = str
+          return d.innerHTML
+        }
+
+        document.getElementById('list').addEventListener('click', async e => {
+          const btn = e.target.closest('button[data-action]')
+          if (!btn) return
+          const itemEl = btn.closest('.item')
+          const id = itemEl.dataset.id
+          const action = btn.dataset.action
+
+          if (action === 'toggle') {
+            todos = todos.map(t => (t.id === id ? { ...t, done: !t.done } : t))
+            renderList()
+            await apiSaveData({ todos })
+          } else if (action === 'delete') {
+            todos = todos.filter(t => t.id !== id)
+            renderList()
+            await apiSaveData({ todos })
+          }
+        })
+
+        async function addTodo() {
+          const input = document.getElementById('new-todo')
+          const text = input.value.trim()
+          if (!text) return
+          todos.push({
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+            text,
+            done: false,
+          })
+          input.value = ''
+          renderList()
+          await apiSaveData({ todos })
+        }
+        document.getElementById('add-btn').addEventListener('click', addTodo)
+        document.getElementById('new-todo').addEventListener('keydown', e => {
+          if (e.key === 'Enter') addTodo()
+        })
+
+        function switchTab(tab) {
+          document.getElementById('tab-todos').classList.toggle('hidden', tab !== 'todos')
+          document.getElementById('tab-notes').classList.toggle('hidden', tab !== 'notes')
+          document.getElementById('tab-btn-todos').classList.toggle('active', tab === 'todos')
+          document.getElementById('tab-btn-notes').classList.toggle('active', tab === 'notes')
+        }
+        document.getElementById('tab-btn-todos').addEventListener('click', () => switchTab('todos'))
+        document.getElementById('tab-btn-notes').addEventListener('click', () => switchTab('notes'))
+
+        document.getElementById('notes-area').addEventListener('input', e => {
+          const status = document.getElementById('notes-status')
+          status.textContent = 'Salvando…'
+          clearTimeout(notesSaveTimer)
+          const value = e.target.value
+          notesSaveTimer = setTimeout(async () => {
+            const ok = await apiSaveData({ notes: value })
+            status.textContent = ok ? 'Salvo' : 'Erro ao salvar'
+            if (ok) {
+              setTimeout(() => {
+                if (status.textContent === 'Salvo') status.textContent = ''
+              }, 1500)
+            }
+          }, 600)
+        })
+
+        async function openApp() {
+          const data = await apiGetData()
+          todos = (data && data.todos) || []
+          renderList()
+          document.getElementById('notes-area').value = (data && data.notes) || ''
+          show('app')
+        }
+
+        document.getElementById('btn-lock').addEventListener('click', () => {
+          currentPassword = null
+          show('lock')
+          document.getElementById('lock-pass').value = ''
+        })
+
+        document.getElementById('btn-change-pass').addEventListener('click', () => {
+          document.getElementById('change-pass1').value = ''
+          document.getElementById('change-pass2').value = ''
+          document.getElementById('change-error').textContent = ''
+          show('change')
+        })
+        document.getElementById('change-cancel').addEventListener('click', () => show('app'))
+        document.getElementById('change-submit').addEventListener('click', async () => {
+          const p1 = document.getElementById('change-pass1').value
+          const p2 = document.getElementById('change-pass2').value
+          const err = document.getElementById('change-error')
+          if (p1.length < 3) {
+            err.textContent = 'Use pelo menos 3 caracteres.'
+            return
+          }
+          if (p1 !== p2) {
+            err.textContent = 'As senhas não coincidem.'
+            return
+          }
+          const ok = await apiChangePassword(currentPassword, p1)
+          if (ok) {
+            currentPassword = p1
+            toast('Senha atualizada!')
+            show('app')
+          } else {
+            err.textContent = 'Não foi possível salvar. Tente de novo.'
+          }
+        })
+
+        document.getElementById('setup-submit').addEventListener('click', async () => {
+          const p1 = document.getElementById('setup-pass1').value
+          const p2 = document.getElementById('setup-pass2').value
+          const err = document.getElementById('setup-error')
+          if (p1.length < 3) {
+            err.textContent = 'Use pelo menos 3 caracteres.'
+            return
+          }
+          if (p1 !== p2) {
+            err.textContent = 'As senhas não coincidem.'
+            return
+          }
+          const ok = await apiSetup(p1)
+          if (ok) {
+            currentPassword = p1
+            await openApp()
+          } else {
+            err.textContent = 'Não foi possível salvar. Tente de novo.'
+          }
+        })
+
+        async function tryUnlock(pass, errEl, cardEl) {
+          const ok = await apiCheck(pass)
+          if (ok) {
+            currentPassword = pass
+            openApp()
+          } else {
+            errEl.textContent = 'Senha incorreta.'
+            cardEl.classList.remove('shake')
+            void cardEl.offsetWidth
+            cardEl.classList.add('shake')
+          }
+        }
+
+        document.getElementById('lock-submit').addEventListener('click', async () => {
+          const pass = document.getElementById('lock-pass').value
+          tryUnlock(pass, document.getElementById('lock-error'), screens.lock)
+        })
+        document.getElementById('lock-pass').addEventListener('keydown', async e => {
+          if (e.key === 'Enter') document.getElementById('lock-submit').click()
+        })
+        document.getElementById('setup-pass2').addEventListener('keydown', e => {
+          if (e.key === 'Enter') document.getElementById('setup-submit').click()
+        })
+
+        async function init() {
+          const status = await apiStatus()
+          if (!status) {
+            document.getElementById('screen-loading').textContent =
+              'Não consegui falar com o servidor. Verifique se a API está no ar.'
+            return
+          }
+          if (!status.hasPassword) {
+            show('setup')
+          } else {
+            show('lock')
+          }
+        }
+        init()
+      })()
+    </script>
+  </body>
+</html>
