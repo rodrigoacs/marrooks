@@ -1,18 +1,26 @@
 services:
   api:
     build: ./api
-    container_name: marrooks-todo-api
+    container_name: marrooks-api
     restart: unless-stopped
     volumes:
       - ./data:/app/data
-    expose:
-      - "3344"
+    networks:
+      - default
+      - proxy
 
   web:
     build: ./web
-    container_name: marrooks-todo-web
+    container_name: marrooks-web
     restart: unless-stopped
     depends_on:
       - api
     ports:
-      - "8080:80"
+      - "8086:80"
+    networks:
+      - default
+      - proxy
+
+networks:
+  proxy:
+    external: true
