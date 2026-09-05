@@ -1,0 +1,13 @@
+# dependências
+node_modules/
+
+# variáveis de ambiente
+.env
+.env.local
+
+# build
+frontend/dist/
+
+# editor / SO
+.DS_Store
+*.log

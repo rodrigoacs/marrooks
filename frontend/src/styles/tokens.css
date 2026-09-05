@@ -1,0 +1,95 @@
+/*
+  Marrooks — design tokens
+  Fonte da verdade visual: paleta e tipografia já usadas no CheckoutPage.vue
+  original. Qualquer novo componente deve consumir estas variáveis em vez
+  de hex/px soltos, para manter a Fase 1C consistente com o que vier depois.
+*/
+
+:root {
+  /* Paleta de marca */
+  --color-brown-900: #512f18;
+  /* marrom escuro — texto principal, contornos */
+  --color-terracotta-600: #c06e42;
+  /* terracota */
+  --color-rust-600: #b34d2b;
+  /* ferrugem — cor primária de CTA */
+  --color-coral-500: #d86841;
+  /* coral */
+  --color-cream-100: #fce0bd;
+  /* creme — fundo da página */
+
+  /* Neutros derivados da paleta (tons de marrom usados em texto/apoio) */
+  --color-brown-700: #7a4e2b;
+  --color-brown-600: #8a5a32;
+  --color-brown-500: #9a6b44;
+  --color-brown-800: #6b4525;
+
+  /* Superfícies */
+  --color-bg: var(--color-cream-100);
+  --color-surface: #fff8ef;
+  /* cartões — ex.: bloco de pagamento */
+  --color-surface-solid: #ffffff;
+  /* inputs */
+
+  /* Texto */
+  --color-text: var(--color-brown-900);
+  --color-text-muted: var(--color-brown-700);
+  --color-text-subtle: var(--color-brown-600);
+
+  /* Ação */
+  --color-primary: var(--color-rust-600);
+  --color-primary-contrast: var(--color-cream-100);
+  --color-danger: #aa3333;
+
+  /* Bordas — sempre derivadas do marrom escuro com opacidade, nunca cinza puro */
+  --color-border: rgba(81, 47, 24, 0.25);
+  --color-border-soft: rgba(81, 47, 24, 0.2);
+  --color-border-dashed: rgba(81, 47, 24, 0.3);
+
+  /* Lombadas (spines) — usadas para itens de pedido/carrinho, ecoando o logo */
+  --color-spine-1: var(--color-rust-600);
+  --color-spine-2: var(--color-terracotta-600);
+  --color-spine-3: var(--color-coral-500);
+
+  /* Tipografia */
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Karla', sans-serif;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 32px;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* Espaçamento — escala em múltiplos de 4px, como já usado no checkout */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 36px;
+  --space-9: 40px;
+  --space-10: 48px;
+
+  /* Raios — a lombada usa um raio assimétrico (canto reto do lado do "encadernado") */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-spine: var(--radius-lg) var(--radius-sm) var(--radius-sm) var(--radius-lg);
+
+  /* Sombra — sempre um deslocamento sólido na cor da marca, nunca cinza/blur genérico */
+  --shadow-spine: -4px 4px 0 rgba(81, 47, 24, 0.12);
+
+  /* Layout */
+  --content-max-width: 960px;
+  --header-height: 76px;
+}

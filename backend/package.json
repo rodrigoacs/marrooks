@@ -1,0 +1,21 @@
+{
+  "name": "marrooks-backend",
+  "version": "1.0.0",
+  "description": "Backend Marrooks - Express + PostgreSQL + Mercado Pago + Melhor Envio",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file=.env server.js",
+    "dev": "node --watch --env-file=.env server.js",
+    "create-admin": "node --env-file=.env scripts/create-admin.js",
+    "db:migrate": "node --env-file=.env db/migrate.js",
+    "db:seed": "node --env-file=.env db/seed.js",
+    "db:reset": "node --env-file=.env db/migrate.js --drop && node --env-file=.env db/seed.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "mercadopago": "^3.6.0",
+    "pg": "^8.16.3"
+  }
+}
