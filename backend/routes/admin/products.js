@@ -3,10 +3,12 @@ import express from 'express'
 import { query, transaction } from '../../db/index.js'
 import { badRequest, notFound } from '../../lib/errors.js'
 import { requireAdmin } from '../../middleware/auth.js'
+import adminVariantRoutes from './variants.js'
 
 const router = express.Router()
 
 router.use(requireAdmin)
+router.use('/:productId/variants', adminVariantRoutes)
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
@@ -19,7 +21,6 @@ function mapProduct(row) {
     description: row.description,
     price: row.price,
     comparePrice: row.compare_price,
-    stock: row.stock,
     active: row.active,
     featured: row.featured,
     category: row.category_slug ? { slug: row.category_slug, name: row.category_name } : null,
@@ -31,6 +32,7 @@ function mapProduct(row) {
       weight: row.weight,
     },
     images: row.images ?? [],
+    variantCount: Number(row.variant_count ?? 0),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -39,7 +41,7 @@ function mapProduct(row) {
 const BASE_SELECT = `
   SELECT
     p.id, p.slug, p.name, p.short_description, p.description,
-    p.price, p.compare_price, p.stock, p.active, p.featured, p.category_id,
+    p.price, p.compare_price, p.active, p.featured, p.category_id,
     p.width, p.height, p.length, p.weight, p.created_at, p.updated_at,
     c.slug AS category_slug, c.name AS category_name,
     COALESCE(
@@ -49,7 +51,8 @@ const BASE_SELECT = `
         WHERE i.product_id = p.id
       ),
       '[]'::json
-    ) AS images
+    ) AS images,
+    (SELECT COUNT(*) FROM product_variants v WHERE v.product_id = p.id AND v.active = TRUE) AS variant_count
   FROM products p
   LEFT JOIN categories c ON c.id = p.category_id
 `
@@ -80,11 +83,6 @@ function validatePayload(body, { partial } = {}) {
     if (data.comparePrice !== null && (!Number.isFinite(data.comparePrice) || data.comparePrice < 0)) {
       errors.comparePrice = 'Preço comparativo inválido'
     }
-  }
-
-  if (!partial || body.stock !== undefined) {
-    data.stock = Number(body.stock)
-    if (!Number.isInteger(data.stock) || data.stock < 0) errors.stock = 'Informe um estoque válido'
   }
 
   if (body.categoryId !== undefined) {
@@ -142,9 +140,9 @@ router.post('/', async (req, res) => {
   const product = await transaction(async (client) => {
     const result = await client.query(
       `INSERT INTO products
-         (slug, name, short_description, description, price, compare_price, stock,
+         (slug, name, short_description, description, price, compare_price,
           active, featured, category_id, width, height, length, weight)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING id`,
       [
         data.slug,
@@ -153,7 +151,6 @@ router.post('/', async (req, res) => {
         data.description ?? null,
         data.price,
         data.comparePrice ?? null,
-        data.stock,
         data.active ?? true,
         data.featured ?? false,
         data.categoryId ?? null,
@@ -194,7 +191,6 @@ router.patch('/:id', async (req, res) => {
     description: 'description',
     price: 'price',
     comparePrice: 'compare_price',
-    stock: 'stock',
     active: 'active',
     featured: 'featured',
     categoryId: 'category_id',

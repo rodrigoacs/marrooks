@@ -14,7 +14,6 @@ function mapProduct(row) {
     description: row.description,
     price: row.price,
     comparePrice: row.compare_price,
-    stock: row.stock,
     featured: row.featured,
     category: row.category_slug ? { slug: row.category_slug, name: row.category_name } : null,
     dimensions: {
@@ -27,10 +26,20 @@ function mapProduct(row) {
   }
 }
 
+function mapVariant(row) {
+  return {
+    slug: row.slug,
+    series: row.series,
+    bookTitle: row.book_title,
+    author: row.author,
+    image: row.image_url ? { url: row.image_url, alt: row.image_alt } : null,
+  }
+}
+
 const BASE_SELECT = `
   SELECT
     p.id, p.slug, p.name, p.short_description, p.description,
-    p.price, p.compare_price, p.stock, p.featured,
+    p.price, p.compare_price, p.featured,
     p.width, p.height, p.length, p.weight,
     c.slug AS category_slug, c.name AS category_name,
     COALESCE(
@@ -45,7 +54,11 @@ const BASE_SELECT = `
   LEFT JOIN categories c ON c.id = p.category_id
 `
 
-// GET /api/products?category=mini-livros&search=thorns&featured=true
+// GET /api/products?category=livros&search=harry+potter&featured=true
+// A busca também encontra produtos por uma capa correspondente (série,
+// livro ou autor) — assim o cliente acha o "Mini Livro" procurando
+// diretamente pelo título ou autor que quer, sem a capa virar um item
+// separado no catálogo.
 router.get('/', async (req, res) => {
   const { category, search, featured } = req.query
 
@@ -59,7 +72,15 @@ router.get('/', async (req, res) => {
 
   if (search) {
     params.push(`%${search}%`)
-    conditions.push(`(p.name ILIKE $${params.length} OR p.description ILIKE $${params.length})`)
+    const term = `$${params.length}`
+    conditions.push(`(
+      p.name ILIKE ${term} OR p.description ILIKE ${term}
+      OR EXISTS (
+        SELECT 1 FROM product_variants v
+        WHERE v.product_id = p.id AND v.active = TRUE
+          AND (v.series ILIKE ${term} OR v.book_title ILIKE ${term} OR v.author ILIKE ${term})
+      )
+    )`)
   }
 
   if (featured === 'true') {
@@ -82,7 +103,22 @@ router.get('/:slug', async (req, res) => {
 
   if (result.rows.length === 0) throw notFound('Produto não encontrado')
 
-  res.json({ product: mapProduct(result.rows[0]) })
+  const product = result.rows[0]
+
+  const variantsResult = await query(
+    `SELECT slug, series, book_title, author, image_url, image_alt
+     FROM product_variants
+     WHERE product_id = $1 AND active = TRUE
+     ORDER BY series NULLS LAST, book_title`,
+    [product.id]
+  )
+
+  res.json({
+    product: {
+      ...mapProduct(product),
+      variants: variantsResult.rows.map(mapVariant),
+    },
+  })
 })
 
 export default router

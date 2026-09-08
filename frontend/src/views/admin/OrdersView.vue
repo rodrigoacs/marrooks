@@ -28,41 +28,43 @@
       class="state"
     >Nenhum pedido encontrado.</p>
 
-    <table
+    <div
       v-else
-      class="table"
+      class="table-scroll"
     >
-      <thead>
-        <tr>
-          <th>Pedido</th>
-          <th>Cliente</th>
-          <th>Total</th>
-          <th>Status</th>
-          <th>Data</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="order in orders"
-          :key="order.reference"
-        >
-          <td class="mono">{{ order.reference }}</td>
-          <td>{{ order.customer.name }}</td>
-          <td>{{ formatPrice(order.total) }}</td>
-          <td>
-            <span
-              class="badge"
-              :class="order.status"
-            >{{ statusLabel(order.status) }}</span>
-          </td>
-          <td>{{ formatDate(order.createdAt) }}</td>
-          <td>
-            <RouterLink :to="`/admin/pedidos/${order.reference}`">Ver</RouterLink>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Pedido</th>
+            <th>Cliente</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Data</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="order in orders"
+            :key="order.reference"
+          >
+            <td class="mono">{{ order.reference }}</td>
+            <td>{{ order.customer.name }}</td>
+            <td>{{ formatPrice(order.total) }}</td>
+            <td>
+              <span
+                class="badge"
+                :class="order.status"
+              >{{ statusLabel(order.status) }}</span>
+            </td>
+            <td>{{ formatDate(order.createdAt) }}</td>
+            <td>
+              <RouterLink :to="`/admin/pedidos/${order.reference}`">Ver</RouterLink>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -125,12 +127,13 @@ h1 {
 }
 
 select {
+  min-height: 44px;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: 1.5px solid var(--color-border);
   background: var(--color-surface-solid);
   font-family: var(--font-body);
-  font-size: var(--text-sm);
+  font-size: 16px;
   color: var(--color-text);
 }
 
@@ -170,6 +173,9 @@ select {
   color: var(--color-primary);
   font-weight: var(--weight-semibold);
   text-decoration: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .badge {

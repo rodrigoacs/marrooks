@@ -1,16 +1,24 @@
 <template>
   <div class="admin">
     <aside class="sidebar">
-      <RouterLink
-        to="/"
-        class="brand"
-      >
-        <img
-          src="/logo.png"
-          alt="Marrooks"
-        />
-        <span>Marrooks admin</span>
-      </RouterLink>
+      <div class="topbar-row">
+        <RouterLink
+          to="/"
+          class="brand"
+        >
+          <img
+            src="/logo.png"
+            alt="Marrooks"
+          />
+          <span>Marrooks admin</span>
+        </RouterLink>
+
+        <button
+          type="button"
+          class="logout logout-mobile"
+          @click="handleLogout"
+        >Sair</button>
+      </div>
 
       <nav class="nav">
         <RouterLink
@@ -30,7 +38,7 @@
         >Voltar para a loja</RouterLink>
         <button
           type="button"
-          class="logout"
+          class="logout logout-desktop"
           @click="handleLogout"
         >Sair</button>
       </div>
@@ -92,6 +100,10 @@ async function handleLogout() {
   font-weight: var(--weight-semibold);
 }
 
+.topbar-row {
+  display: none;
+}
+
 .nav {
   display: flex;
   flex-direction: column;
@@ -106,6 +118,9 @@ async function handleLogout() {
   font-weight: var(--weight-medium);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
 }
 
 .nav-link.router-link-active {
@@ -124,6 +139,7 @@ async function handleLogout() {
 .nav-link.subtle {
   padding: 0;
   font-size: var(--text-sm);
+  min-height: auto;
 }
 
 .logout {
@@ -134,7 +150,12 @@ async function handleLogout() {
   color: var(--color-danger);
   font-weight: var(--weight-semibold);
   font-size: var(--text-sm);
+  min-height: 44px;
   cursor: pointer;
+}
+
+.logout-mobile {
+  display: none;
 }
 
 .content {
@@ -150,23 +171,52 @@ async function handleLogout() {
 
   .sidebar {
     width: 100%;
-    flex-direction: row;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  .topbar-row {
+    display: flex;
     align-items: center;
-    gap: var(--space-5);
+    justify-content: space-between;
+  }
+
+  .logout-mobile {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .logout-desktop {
+    display: none;
   }
 
   .nav {
     flex-direction: row;
+    gap: var(--space-2);
+  }
+
+  .nav-link {
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+    background: var(--color-cream-100);
+  }
+
+  .nav-link.router-link-active {
+    background: var(--color-primary);
   }
 
   .sidebar-footer {
-    border-top: none;
-    padding-top: 0;
-    flex-direction: row;
+    display: none;
   }
 
   .content {
-    padding: var(--space-6) var(--space-4);
+    padding: var(--space-5) var(--space-4);
   }
 }
 </style>

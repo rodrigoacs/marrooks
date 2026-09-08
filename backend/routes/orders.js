@@ -54,42 +54,61 @@ router.post('/', requireAuth, async (req, res) => {
     throw badRequest('Frete inválido — calcule novamente')
   }
 
-  // Deduplica por slug e valida quantidades antes de tocar no banco.
+  // Deduplica por produto+capa e valida quantidades antes de tocar no banco.
   const requested = new Map()
   for (const item of items) {
-    const slug = item?.slug
+    const productSlug = item?.productSlug
+    const variantSlug = item?.variantSlug ?? null
     const quantity = Number(item?.quantity)
-    if (!slug || !Number.isInteger(quantity) || quantity <= 0) {
+    if (!productSlug || !Number.isInteger(quantity) || quantity <= 0) {
       throw badRequest('Item de carrinho inválido')
     }
-    requested.set(slug, (requested.get(slug) ?? 0) + quantity)
+    const key = `${productSlug}::${variantSlug ?? ''}`
+    const existing = requested.get(key)
+    requested.set(key, {
+      productSlug,
+      variantSlug,
+      quantity: (existing?.quantity ?? 0) + quantity,
+    })
   }
 
-  const slugs = [...requested.keys()]
+  const productSlugs = [...new Set([...requested.values()].map((item) => item.productSlug))]
   const productsResult = await query(
-    `SELECT id, slug, name, price, stock FROM products WHERE slug = ANY($1) AND active = TRUE`,
-    [slugs]
+    `SELECT id, slug, name, price FROM products WHERE slug = ANY($1) AND active = TRUE`,
+    [productSlugs]
   )
-
   const productsBySlug = new Map(productsResult.rows.map((row) => [row.slug, row]))
 
-  for (const slug of slugs) {
-    const product = productsBySlug.get(slug)
-    if (!product) throw badRequest(`Produto "${slug}" não está mais disponível`)
-    if (product.stock < requested.get(slug)) {
-      throw badRequest(`Estoque insuficiente para "${product.name}"`)
-    }
-  }
+  const variantSlugs = [...requested.values()].filter((item) => item.variantSlug).map((item) => item.variantSlug)
+  const variantsResult = variantSlugs.length
+    ? await query(
+      `SELECT id, product_id, slug, series, book_title, author
+         FROM product_variants WHERE slug = ANY($1) AND active = TRUE`,
+      [variantSlugs]
+    )
+    : { rows: [] }
+  const variantsByKey = new Map(variantsResult.rows.map((row) => [`${row.product_id}::${row.slug}`, row]))
 
-  const orderItems = slugs.map((slug) => {
-    const product = productsBySlug.get(slug)
-    const quantity = requested.get(slug)
+  const orderItems = [...requested.values()].map(({ productSlug, variantSlug, quantity }) => {
+    const product = productsBySlug.get(productSlug)
+    if (!product) throw badRequest(`Produto "${productSlug}" não está mais disponível`)
+
+    let variant = null
+    if (variantSlug) {
+      variant = variantsByKey.get(`${product.id}::${variantSlug}`)
+      if (!variant) throw badRequest(`Capa "${variantSlug}" não está mais disponível para "${product.name}"`)
+    }
+
     return {
       productId: product.id,
+      productVariantId: variant?.id ?? null,
       name: product.name,
       slug: product.slug,
       unitPrice: product.price,
       quantity,
+      variantSeries: variant?.series ?? null,
+      variantBookTitle: variant?.book_title ?? null,
+      variantAuthor: variant?.author ?? null,
     }
   })
 
@@ -133,9 +152,22 @@ router.post('/', requireAuth, async (req, res) => {
 
     for (const item of orderItems) {
       await client.query(
-        `INSERT INTO order_items (order_id, product_id, product_name, product_slug, unit_price, quantity)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [orderResult.rows[0].id, item.productId, item.name, item.slug, item.unitPrice, item.quantity]
+        `INSERT INTO order_items
+           (order_id, product_id, product_variant_id, product_name, product_slug,
+            variant_series, variant_book_title, variant_author, unit_price, quantity)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [
+          orderResult.rows[0].id,
+          item.productId,
+          item.productVariantId,
+          item.name,
+          item.slug,
+          item.variantSeries,
+          item.variantBookTitle,
+          item.variantAuthor,
+          item.unitPrice,
+          item.quantity,
+        ]
       )
     }
 
@@ -156,7 +188,8 @@ router.get('/:reference', requireAuth, async (req, res) => {
   }
 
   const itemsResult = await query(
-    `SELECT product_name, product_slug, unit_price, quantity FROM order_items WHERE order_id = $1`,
+    `SELECT product_name, product_slug, variant_series, variant_book_title, variant_author, unit_price, quantity
+     FROM order_items WHERE order_id = $1`,
     [order.id]
   )
 
@@ -166,6 +199,9 @@ router.get('/:reference', requireAuth, async (req, res) => {
       items: itemsResult.rows.map((row) => ({
         name: row.product_name,
         slug: row.product_slug,
+        variant: row.variant_book_title
+          ? { series: row.variant_series, bookTitle: row.variant_book_title, author: row.variant_author }
+          : null,
         unitPrice: row.unit_price,
         quantity: row.quantity,
       })),

@@ -18,24 +18,30 @@
       <ul class="items">
         <li
           v-for="(item, i) in items"
-          :key="item.slug"
+          :key="item.key"
           class="item"
           :class="`s${(i % 3) + 1}`"
         >
           <RouterLink
-            :to="`/produto/${item.slug}`"
+            :to="`/produto/${item.productSlug}`"
             class="name"
-          >{{ item.name }}</RouterLink>
+          >
+            {{ item.name }}
+            <span
+              v-if="item.author"
+              class="author"
+            >{{ item.author }}</span>
+          </RouterLink>
 
           <div class="qty-row">
             <button
               type="button"
-              @click="updateQuantity(item.slug, item.quantity - 1)"
+              @click="updateQuantity(item.key, item.quantity - 1)"
             >-</button>
             <span>{{ item.quantity }}</span>
             <button
               type="button"
-              @click="updateQuantity(item.slug, item.quantity + 1)"
+              @click="updateQuantity(item.key, item.quantity + 1)"
             >+</button>
           </div>
 
@@ -45,7 +51,7 @@
             type="button"
             class="remove"
             aria-label="Remover"
-            @click="removeItem(item.slug)"
+            @click="removeItem(item.key)"
           >&times;</button>
         </li>
       </ul>
@@ -131,11 +137,21 @@ h1 {
 
 .name {
   flex: 1;
+  min-width: 0;
   color: inherit;
   text-decoration: none;
   font-family: var(--font-display);
   font-size: var(--text-md);
   font-weight: var(--weight-medium);
+  display: flex;
+  flex-direction: column;
+}
+
+.author {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+  opacity: 0.8;
 }
 
 .qty-row {

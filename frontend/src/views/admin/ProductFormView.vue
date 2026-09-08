@@ -66,14 +66,6 @@
             min="0"
           />
         </label>
-        <label class="field">
-          <span>Estoque</span>
-          <input
-            v-model="form.stock"
-            type="number"
-            min="0"
-          />
-        </label>
       </div>
 
       <label class="field">
@@ -145,38 +137,43 @@
         </label>
       </div>
 
-      <p class="section-label">Imagens</p>
-      <div
-        v-for="(image, index) in form.images"
-        :key="index"
-        class="field-row"
-      >
-        <label class="field grow">
-          <span>URL</span>
-          <input
-            v-model="image.url"
-            type="text"
-            placeholder="/produtos/exemplo.jpg"
+      <p class="section-label">Fotos do produto</p>
+      <div class="images-list">
+        <div
+          v-for="(image, index) in form.images"
+          :key="index"
+          class="image-item"
+        >
+          <ImageUploadField
+            :url="image.url"
+            :alt="image.alt"
+            @update:url="(value) => (image.url = value)"
+            @update:alt="(value) => (image.alt = value)"
           />
-        </label>
-        <label class="field grow">
-          <span>Texto alternativo</span>
-          <input
-            v-model="image.alt"
-            type="text"
-          />
-        </label>
-        <button
-          type="button"
-          class="link-btn danger"
-          @click="form.images.splice(index, 1)"
-        >Remover</button>
+          <button
+            type="button"
+            class="link-btn danger"
+            @click="form.images.splice(index, 1)"
+          >Remover esta foto</button>
+        </div>
       </div>
       <button
         type="button"
         class="link-btn"
         @click="form.images.push({ url: '', alt: '' })"
-      >+ Adicionar imagem</button>
+      >{{ form.images.length === 0 ? '+ Adicionar foto' : '+ Adicionar outra foto' }}</button>
+
+      <div
+        v-if="isEditing"
+        class="variants-callout"
+      >
+        <p class="section-label">Capas</p>
+        <p class="muted">Cada capa (livro/série/autor) é gerenciada numa tela própria.</p>
+        <RouterLink
+          :to="`/admin/produtos/${id}/capas`"
+          class="link-btn"
+        >Gerenciar capas &rarr;</RouterLink>
+      </div>
 
       <p
         v-if="formError"
@@ -202,6 +199,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { adminProductsApi, categoriesApi, ApiError } from '../../lib/api'
+import ImageUploadField from '../../components/ImageUploadField.vue'
 
 const props = defineProps({
   id: {
@@ -226,7 +224,6 @@ const form = reactive({
   description: '',
   price: '',
   comparePrice: '',
-  stock: 0,
   categoryId: null,
   active: true,
   featured: false,
@@ -234,7 +231,7 @@ const form = reactive({
   height: 2,
   length: 16,
   weight: 0.05,
-  images: [],
+  images: [{ url: '', alt: '' }],
 })
 
 function slugify(text) {
@@ -260,7 +257,6 @@ function buildPayload() {
     description: form.description,
     price: form.price,
     comparePrice: form.comparePrice === '' ? null : form.comparePrice,
-    stock: form.stock,
     categoryId: form.categoryId,
     active: form.active,
     featured: form.featured,
@@ -307,7 +303,6 @@ onMounted(async () => {
       form.description = product.description ?? ''
       form.price = product.price
       form.comparePrice = product.comparePrice ?? ''
-      form.stock = product.stock
       form.categoryId = product.categoryId
       form.active = product.active
       form.featured = product.featured
@@ -315,7 +310,7 @@ onMounted(async () => {
       form.height = product.dimensions.height
       form.length = product.dimensions.length
       form.weight = product.dimensions.weight
-      form.images = product.images.length ? product.images.map((img) => ({ ...img })) : []
+      form.images = product.images.length ? product.images.map((img) => ({ ...img })) : [{ url: '', alt: '' }]
     } catch (err) {
       formError.value = err instanceof ApiError ? err.message : 'Não foi possível carregar o produto.'
     } finally {
@@ -348,6 +343,11 @@ h1 {
 .field-row {
   display: flex;
   gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.field-row>* {
+  min-width: 140px;
 }
 
 .field {
@@ -371,12 +371,14 @@ h1 {
   border: 1.5px solid var(--color-border);
   background: var(--color-surface-solid);
   font-family: var(--font-body);
-  font-size: var(--text-base);
+  font-size: 16px;
+  min-height: 44px;
   color: var(--color-text);
 }
 
 .field textarea {
   resize: vertical;
+  min-height: 96px;
 }
 
 .checkboxes {
@@ -389,6 +391,12 @@ h1 {
   gap: var(--space-2);
   font-size: var(--text-sm);
   color: var(--color-text);
+  min-height: 44px;
+}
+
+.checkbox input {
+  width: 20px;
+  height: 20px;
 }
 
 .section-label {
@@ -399,11 +407,51 @@ h1 {
   border-top: 1.5px dashed var(--color-border-dashed);
 }
 
+.images-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.image-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.image-item:last-child {
+  border-bottom: none;
+}
+
+.variants-callout {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border-soft);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.variants-callout .section-label {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.variants-callout .muted {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin: 0 0 var(--space-2);
+}
+
 .link-btn {
   align-self: flex-start;
   border: none;
   background: none;
   padding: 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   font-family: inherit;
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
@@ -437,6 +485,7 @@ h1 {
   color: var(--color-primary-contrast);
   font-weight: var(--weight-semibold);
   font-size: var(--text-sm);
+  min-height: 44px;
   cursor: pointer;
 }
 
@@ -449,5 +498,8 @@ h1 {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   text-decoration: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 </style>

@@ -98,4 +98,33 @@ export const adminOrdersApi = {
   update: (reference, payload) => api.patch(`/admin/orders/${reference}`, payload),
 }
 
+export const adminVariantsApi = {
+  list: (productId) => api.get(`/admin/products/${productId}/variants`),
+  create: (productId, payload) => api.post(`/admin/products/${productId}/variants`, payload),
+  update: (productId, variantId, payload) => api.patch(`/admin/products/${productId}/variants/${variantId}`, payload),
+  remove: (productId, variantId) => api.delete(`/admin/products/${productId}/variants/${variantId}`),
+}
+
+export const adminUploadsApi = {
+  upload: async (file) => {
+    const formData = new FormData()
+    formData.append('image', file)
+
+    const response = await fetch(`${BASE_URL}/admin/uploads`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    })
+
+    const isJson = response.headers.get('content-type')?.includes('application/json')
+    const data = isJson ? await response.json() : null
+
+    if (!response.ok) {
+      throw new ApiError(data?.error ?? 'Não foi possível enviar a imagem', response.status, data?.details)
+    }
+
+    return data
+  },
+}
+
 export { ApiError }

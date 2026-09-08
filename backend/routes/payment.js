@@ -77,16 +77,6 @@ router.post('/process_payment', requireAuth, async (req, res) => {
     [order.id, newStatus, result.id, result.status, formData.payment_method_id]
   )
 
-  if (newStatus === 'paid') {
-    await query(
-      `UPDATE products p
-       SET stock = p.stock - oi.quantity
-       FROM order_items oi
-       WHERE oi.order_id = $1 AND oi.product_id = p.id`,
-      [order.id]
-    )
-  }
-
   res.status(201).json({
     id: result.id,
     status: result.status,

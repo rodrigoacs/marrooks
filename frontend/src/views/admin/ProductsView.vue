@@ -21,67 +21,72 @@
       class="state"
     >Nenhum produto cadastrado ainda.</p>
 
-    <table
+    <div
       v-else
-      class="table"
+      class="table-scroll"
     >
-      <thead>
-        <tr>
-          <th>Produto</th>
-          <th>Categoria</th>
-          <th>Preço</th>
-          <th>Estoque</th>
-          <th>Status</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="product in products"
-          :key="product.id"
-        >
-          <td>
-            <div class="product-cell">
-              <img
-                v-if="product.images?.[0]?.url"
-                :src="product.images[0].url"
-                :alt="product.name"
-              />
-              <div
-                v-else
-                class="image-fallback"
-              >{{ product.name.charAt(0) }}</div>
-              <div>
-                <div class="name">{{ product.name }}</div>
-                <div class="slug">{{ product.slug }}</div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th>Categoria</th>
+            <th>Preço</th>
+            <th>Capas</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="product in products"
+            :key="product.id"
+          >
+            <td>
+              <div class="product-cell">
+                <img
+                  v-if="product.images?.[0]?.url"
+                  :src="product.images[0].url"
+                  :alt="product.name"
+                />
+                <div
+                  v-else
+                  class="image-fallback"
+                >{{ product.name.charAt(0) }}</div>
+                <div>
+                  <div class="name">{{ product.name }}</div>
+                  <div class="slug">{{ product.slug }}</div>
+                </div>
               </div>
-            </div>
-          </td>
-          <td>{{ product.category?.name ?? '—' }}</td>
-          <td>{{ formatPrice(product.price) }}</td>
-          <td>{{ product.stock }}</td>
-          <td>
-            <span
-              class="badge"
-              :class="product.active ? 'active' : 'inactive'"
-            >{{ product.active ? 'Ativo' : 'Inativo' }}</span>
-            <span
-              v-if="product.featured"
-              class="badge featured"
-            >Destaque</span>
-          </td>
-          <td class="actions">
-            <RouterLink :to="`/admin/produtos/${product.id}/editar`">Editar</RouterLink>
-            <button
-              v-if="product.active"
-              type="button"
-              class="link-btn danger"
-              @click="handleDeactivate(product)"
-            >Desativar</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+            </td>
+            <td>{{ product.category?.name ?? '—' }}</td>
+            <td>{{ formatPrice(product.price) }}</td>
+            <td>
+              <RouterLink :to="`/admin/produtos/${product.id}/capas`">{{ product.variantCount }} capa{{
+                product.variantCount === 1 ? '' : 's' }}</RouterLink>
+            </td>
+            <td>
+              <span
+                class="badge"
+                :class="product.active ? 'active' : 'inactive'"
+              >{{ product.active ? 'Ativo' : 'Inativo' }}</span>
+              <span
+                v-if="product.featured"
+                class="badge featured"
+              >Destaque</span>
+            </td>
+            <td class="actions">
+              <RouterLink :to="`/admin/produtos/${product.id}/editar`">Editar</RouterLink>
+              <button
+                v-if="product.active"
+                type="button"
+                class="link-btn danger"
+                @click="handleDeactivate(product)"
+              >Desativar</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -145,6 +150,9 @@ h1 {
   border-radius: var(--radius-md);
   font-weight: var(--weight-semibold);
   font-size: var(--text-sm);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .state {
@@ -161,6 +169,11 @@ h1 {
   font-size: var(--text-sm);
 }
 
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .table th {
   text-align: left;
   color: var(--color-brown-600);
@@ -173,6 +186,12 @@ h1 {
   padding: var(--space-3);
   border-bottom: 1px solid var(--color-border-soft);
   vertical-align: middle;
+}
+
+.table td a {
+  color: var(--color-primary);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
 }
 
 .product-cell {
@@ -236,6 +255,13 @@ h1 {
   display: flex;
   gap: var(--space-3);
   white-space: nowrap;
+}
+
+.actions a,
+.actions button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .actions a {

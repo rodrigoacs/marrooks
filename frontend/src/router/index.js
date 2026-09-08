@@ -65,6 +65,12 @@ const routes = [
         props: true,
       },
       {
+        path: 'produtos/:id/capas',
+        name: 'admin-product-variants',
+        component: () => import('../views/admin/VariantsView.vue'),
+        props: true,
+      },
+      {
         path: 'pedidos',
         name: 'admin-orders',
         component: () => import('../views/admin/OrdersView.vue'),

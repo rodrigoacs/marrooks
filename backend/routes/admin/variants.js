@@ -1,0 +1,156 @@
+import express from 'express'
+
+import { query } from '../../db/index.js'
+import { badRequest, notFound } from '../../lib/errors.js'
+
+// mergeParams: precisa enxergar o :productId definido no router pai
+// (routes/admin/products.js), já que é montado como sub-rota dele.
+const router = express.Router({ mergeParams: true })
+
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+function mapVariant(row) {
+  return {
+    id: row.id,
+    slug: row.slug,
+    series: row.series,
+    bookTitle: row.book_title,
+    author: row.author,
+    image: row.image_url ? { url: row.image_url, alt: row.image_alt } : null,
+    active: row.active,
+  }
+}
+
+function validatePayload(body, { partial } = {}) {
+  const errors = {}
+  const data = {}
+
+  if (!partial || body.slug !== undefined) {
+    data.slug = body.slug?.trim().toLowerCase()
+    if (!data.slug || !SLUG_PATTERN.test(data.slug)) {
+      errors.slug = 'Slug inválido — use letras minúsculas, números e hífens'
+    }
+  }
+
+  if (!partial || body.bookTitle !== undefined) {
+    data.bookTitle = body.bookTitle?.trim()
+    if (!data.bookTitle) errors.bookTitle = 'Informe o título do livro'
+  }
+
+  if (!partial || body.author !== undefined) {
+    data.author = body.author?.trim()
+    if (!data.author) errors.author = 'Informe o autor'
+  }
+
+  if (body.series !== undefined) data.series = body.series?.trim() || null
+  if (body.imageUrl !== undefined) data.imageUrl = body.imageUrl?.trim() || null
+  if (body.imageAlt !== undefined) data.imageAlt = body.imageAlt?.trim() || null
+  if (body.active !== undefined) data.active = Boolean(body.active)
+
+  if (Object.keys(errors).length > 0) throw badRequest('Dados da capa inválidos', errors)
+
+  return data
+}
+
+async function assertProductExists(productId) {
+  const result = await query('SELECT id FROM products WHERE id = $1', [productId])
+  if (result.rows.length === 0) throw notFound('Produto não encontrado')
+}
+
+// GET /api/admin/products/:productId/variants
+router.get('/', async (req, res) => {
+  await assertProductExists(req.params.productId)
+
+  const result = await query(
+    `SELECT id, slug, series, book_title, author, image_url, image_alt, active
+     FROM product_variants WHERE product_id = $1
+     ORDER BY series NULLS LAST, book_title`,
+    [req.params.productId]
+  )
+
+  res.json({ variants: result.rows.map(mapVariant) })
+})
+
+// POST /api/admin/products/:productId/variants
+router.post('/', async (req, res) => {
+  await assertProductExists(req.params.productId)
+  const data = validatePayload(req.body ?? {})
+
+  const result = await query(
+    `INSERT INTO product_variants (product_id, slug, series, book_title, author, image_url, image_alt, active)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     RETURNING id, slug, series, book_title, author, image_url, image_alt, active`,
+    [
+      req.params.productId,
+      data.slug,
+      data.series ?? null,
+      data.bookTitle,
+      data.author,
+      data.imageUrl ?? null,
+      data.imageAlt ?? null,
+      data.active ?? true,
+    ]
+  )
+
+  res.status(201).json({ variant: mapVariant(result.rows[0]) })
+})
+
+// PATCH /api/admin/products/:productId/variants/:variantId
+router.patch('/:variantId', async (req, res) => {
+  await assertProductExists(req.params.productId)
+  const data = validatePayload(req.body ?? {}, { partial: true })
+
+  const fieldMap = {
+    slug: 'slug',
+    series: 'series',
+    bookTitle: 'book_title',
+    author: 'author',
+    imageUrl: 'image_url',
+    imageAlt: 'image_alt',
+    active: 'active',
+  }
+
+  const sets = []
+  const params = [req.params.variantId, req.params.productId]
+
+  for (const [key, column] of Object.entries(fieldMap)) {
+    if (data[key] !== undefined) {
+      params.push(data[key])
+      sets.push(`${column} = $${params.length}`)
+    }
+  }
+
+  if (sets.length === 0) {
+    const existing = await query(
+      `SELECT id, slug, series, book_title, author, image_url, image_alt, active
+       FROM product_variants WHERE id = $1 AND product_id = $2`,
+      [req.params.variantId, req.params.productId]
+    )
+    if (existing.rows.length === 0) throw notFound('Capa não encontrada')
+    return res.json({ variant: mapVariant(existing.rows[0]) })
+  }
+
+  const result = await query(
+    `UPDATE product_variants SET ${sets.join(', ')}
+     WHERE id = $1 AND product_id = $2
+     RETURNING id, slug, series, book_title, author, image_url, image_alt, active`,
+    params
+  )
+
+  if (result.rows.length === 0) throw notFound('Capa não encontrada')
+  res.json({ variant: mapVariant(result.rows[0]) })
+})
+
+// DELETE /api/admin/products/:productId/variants/:variantId
+// Soft delete: desativa a capa (some do seletor de produto), preservando o
+// histórico de pedidos que já a referenciam.
+router.delete('/:variantId', async (req, res) => {
+  const result = await query(
+    'UPDATE product_variants SET active = FALSE WHERE id = $1 AND product_id = $2 RETURNING id',
+    [req.params.variantId, req.params.productId]
+  )
+  if (result.rows.length === 0) throw notFound('Capa não encontrada')
+  res.status(204).end()
+})
+
+export default router

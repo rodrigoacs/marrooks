@@ -32,7 +32,7 @@
 
           <div
             v-for="(item, i) in items"
-            :key="item.slug"
+            :key="item.key"
             class="spine"
             :class="`s${(i % 3) + 1}`"
           >
@@ -277,6 +277,16 @@ function formatPrice(value) {
   return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
+// O frete depende das dimensões do produto, não da capa — soma a
+// quantidade de capas diferentes do mesmo produto numa linha só.
+function aggregateByProduct(cartItems) {
+  const totals = new Map()
+  for (const item of cartItems) {
+    totals.set(item.productSlug, (totals.get(item.productSlug) ?? 0) + item.quantity)
+  }
+  return [...totals.entries()].map(([slug, quantity]) => ({ slug, quantity }))
+}
+
 function formatCep() {
   const digits = address.postalCode.replace(/\D/g, '').slice(0, 8)
   address.postalCode = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits
@@ -298,7 +308,7 @@ async function calculateShipping() {
   try {
     const data = await shippingApi.calculate({
       toPostalCode: cleanCep,
-      items: items.value.map((item) => ({ slug: item.slug, quantity: item.quantity })),
+      items: aggregateByProduct(items.value),
     })
 
     if (!data.options || data.options.length === 0) {
@@ -337,7 +347,11 @@ async function confirmOrder() {
   creatingOrder.value = true
   try {
     const data = await ordersApi.create({
-      items: items.value.map((item) => ({ slug: item.slug, quantity: item.quantity })),
+      items: items.value.map((item) => ({
+        productSlug: item.productSlug,
+        variantSlug: item.variantSlug,
+        quantity: item.quantity,
+      })),
       shipping: selectedShipping.value,
       customer: { ...customer },
       address: { ...address },

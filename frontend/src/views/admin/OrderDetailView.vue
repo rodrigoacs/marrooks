@@ -45,27 +45,35 @@
       </div>
 
       <p class="label">Itens</p>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Produto</th>
-            <th>Qtd</th>
-            <th>Preço unit.</th>
-            <th>Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="item in order.items"
-            :key="item.slug"
-          >
-            <td>{{ item.name }}</td>
-            <td>{{ item.quantity }}</td>
-            <td>{{ formatPrice(item.unitPrice) }}</td>
-            <td>{{ formatPrice(item.unitPrice * item.quantity) }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Qtd</th>
+              <th>Preço unit.</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="item in order.items"
+              :key="`${item.slug}-${item.variant?.bookTitle ?? ''}`"
+            >
+              <td>
+                {{ item.name }}
+                <span
+                  v-if="item.variant"
+                  class="variant-note"
+                >— {{ item.variant.bookTitle }} ({{ item.variant.author }})</span>
+              </td>
+              <td>{{ item.quantity }}</td>
+              <td>{{ formatPrice(item.unitPrice) }}</td>
+              <td>{{ formatPrice(item.unitPrice * item.quantity) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <div class="totals">
         <div class="row"><span>Subtotal</span><span>{{ formatPrice(order.subtotal) }}</span></div>
@@ -176,7 +184,9 @@ onMounted(loadOrder)
 }
 
 .back {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   margin-bottom: var(--space-5);
   color: var(--color-primary);
   font-weight: var(--weight-semibold);
@@ -232,11 +242,21 @@ h1 {
   font-size: var(--text-sm);
 }
 
+.variant-note {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-sm);
   margin-bottom: var(--space-6);
+}
+
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table th {
@@ -287,12 +307,13 @@ h1 {
 
 .status-row select,
 .status-row input {
+  min-height: 44px;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: 1.5px solid var(--color-border);
   background: var(--color-surface-solid);
   font-family: var(--font-body);
-  font-size: var(--text-sm);
+  font-size: 16px;
   color: var(--color-text);
 }
 
@@ -302,6 +323,7 @@ h1 {
 }
 
 .cta {
+  min-height: 44px;
   padding: var(--space-2) var(--space-5);
   border: none;
   border-radius: var(--radius-md);

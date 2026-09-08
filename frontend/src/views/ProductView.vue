@@ -15,9 +15,9 @@
   >
     <div class="image-wrap">
       <img
-        v-if="product.images?.[0]?.url"
-        :src="product.images[0].url"
-        :alt="product.images[0].alt ?? product.name"
+        v-if="displayImage"
+        :src="displayImage"
+        :alt="selectedVariant?.bookTitle ?? product.name"
       />
       <div
         v-else
@@ -31,13 +31,7 @@
         class="category"
       >{{ product.category.name }}</p>
       <h1>{{ product.name }}</h1>
-      <p class="price">
-        <span
-          v-if="product.comparePrice"
-          class="compare"
-        >{{ formatPrice(product.comparePrice) }}</span>
-        {{ formatPrice(product.price) }}
-      </p>
+      <p class="price">{{ formatPrice(product.price) }}</p>
 
       <p
         v-if="product.shortDescription"
@@ -49,15 +43,57 @@
         class="description"
       >{{ product.description }}</p>
 
-      <p
-        v-if="product.stock === 0"
-        class="out-of-stock"
-      >Sem estoque no momento.</p>
-
       <div
-        v-else
-        class="add-to-cart"
+        v-if="product.variants.length > 0"
+        class="variant-picker"
       >
+        <p class="section-label">Escolha a capa</p>
+        <input
+          v-model="search"
+          type="search"
+          placeholder="Buscar por livro, série ou autor..."
+          class="search"
+        />
+
+        <p
+          v-if="selectedVariant"
+          class="selected-variant"
+        >Selecionado: <strong>{{ selectedVariant.bookTitle }}</strong> — {{ selectedVariant.author }}</p>
+
+        <div class="variant-list">
+          <button
+            v-for="variant in filteredVariants"
+            :key="variant.slug"
+            type="button"
+            class="variant-option"
+            :class="{ selected: selectedVariant?.slug === variant.slug }"
+            @click="selectedVariant = variant"
+          >
+            <img
+              v-if="variant.image?.url"
+              :src="variant.image.url"
+              :alt="variant.bookTitle"
+            />
+            <div
+              v-else
+              class="variant-image-fallback"
+            >{{ variant.bookTitle.charAt(0) }}</div>
+            <span class="variant-info">
+              <span class="variant-title">{{ variant.bookTitle }}</span>
+              <span class="variant-meta">
+                {{ variant.author }}<template v-if="variant.series"> · {{ variant.series }}</template>
+              </span>
+            </span>
+          </button>
+
+          <p
+            v-if="filteredVariants.length === 0"
+            class="no-results"
+          >Nenhuma capa encontrada.</p>
+        </div>
+      </div>
+
+      <div class="add-to-cart">
         <div class="qty-row">
           <button
             type="button"
@@ -72,6 +108,7 @@
         <button
           type="button"
           class="cta"
+          :disabled="product.variants.length > 0 && !selectedVariant"
           @click="handleAddToCart"
         >{{ added ? 'Adicionado!' : 'Adicionar ao carrinho' }}</button>
       </div>
@@ -80,7 +117,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { productsApi } from '../lib/api'
 import { useCart } from '../composables/useCart'
 
@@ -96,8 +133,26 @@ const loading = ref(true)
 const error = ref('')
 const quantity = ref(1)
 const added = ref(false)
+const search = ref('')
+const selectedVariant = ref(null)
 
 const { addItem } = useCart()
+
+const filteredVariants = computed(() => {
+  if (!product.value) return []
+  const term = search.value.trim().toLowerCase()
+  if (!term) return product.value.variants
+
+  return product.value.variants.filter((variant) =>
+    [variant.bookTitle, variant.author, variant.series]
+      .filter(Boolean)
+      .some((field) => field.toLowerCase().includes(term))
+  )
+})
+
+const displayImage = computed(
+  () => selectedVariant.value?.image?.url ?? product.value?.images?.[0]?.url ?? null
+)
 
 async function loadProduct() {
   loading.value = true
@@ -105,6 +160,8 @@ async function loadProduct() {
   product.value = null
   quantity.value = 1
   added.value = false
+  search.value = ''
+  selectedVariant.value = null
 
   try {
     const data = await productsApi.get(props.slug)
@@ -117,7 +174,7 @@ async function loadProduct() {
 }
 
 function handleAddToCart() {
-  addItem(product.value, quantity.value)
+  addItem(product.value, selectedVariant.value, quantity.value)
   added.value = true
   setTimeout(() => {
     added.value = false
@@ -160,6 +217,8 @@ watch(() => props.slug, loadProduct)
   overflow: hidden;
   background: var(--color-surface);
   border: 1.5px solid var(--color-border-soft);
+  position: sticky;
+  top: calc(var(--header-height) + var(--space-6));
 }
 
 .image-wrap img {
@@ -198,14 +257,6 @@ h1 {
   margin: 0 0 var(--space-5);
 }
 
-.compare {
-  font-family: var(--font-body);
-  font-size: var(--text-md);
-  color: var(--color-brown-500);
-  text-decoration: line-through;
-  margin-right: var(--space-2);
-}
-
 .short-description {
   font-size: var(--text-md);
   color: var(--color-text-muted);
@@ -216,12 +267,105 @@ h1 {
   font-size: var(--text-base);
   color: var(--color-text-muted);
   line-height: 1.7;
-  margin: 0 0 var(--space-7);
+  margin: 0 0 var(--space-6);
 }
 
-.out-of-stock {
-  color: var(--color-danger);
-  font-weight: var(--weight-semibold);
+.section-label {
+  font-size: var(--text-sm);
+  color: var(--color-brown-600);
+  margin: 0 0 var(--space-3);
+}
+
+.variant-picker {
+  padding-top: var(--space-5);
+  margin-bottom: var(--space-6);
+  border-top: 1.5px dashed var(--color-border-dashed);
+}
+
+.search {
+  width: 100%;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface-solid);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  margin-bottom: var(--space-3);
+}
+
+.selected-variant {
+  font-size: var(--text-sm);
+  color: var(--color-brown-700);
+  margin: 0 0 var(--space-3);
+}
+
+.variant-list {
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-right: var(--space-1);
+}
+
+.variant-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border: 1.5px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-solid);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.variant-option.selected {
+  border-color: var(--color-primary);
+  background: rgba(179, 77, 43, 0.06);
+}
+
+.variant-option img,
+.variant-image-fallback {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.variant-image-fallback {
+  background: var(--color-cream-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  color: var(--color-brown-500);
+  font-size: var(--text-sm);
+}
+
+.variant-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.variant-title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+}
+
+.variant-meta {
+  font-size: var(--text-xs);
+  color: var(--color-brown-600);
+}
+
+.no-results {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
 }
 
 .add-to-cart {
@@ -258,5 +402,10 @@ h1 {
   font-weight: var(--weight-semibold);
   font-size: var(--text-sm);
   cursor: pointer;
+}
+
+.cta:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 </style>

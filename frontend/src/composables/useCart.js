@@ -1,11 +1,15 @@
 // Carrinho persistente em localStorage, sem dependência de Pinia/Vuex.
-// Guarda snapshot do produto no momento em que foi adicionado (nome, preço,
-// imagem), então o carrinho continua exibindo corretamente mesmo se o
-// produto mudar de preço ou for removido do catálogo depois.
+// Cada item é a combinação produto + capa (quando o produto tem capas) —
+// a chave é productSlug + variantSlug, já que o mesmo produto pode estar
+// no carrinho várias vezes com capas diferentes.
 
 import { computed, reactive, watch } from 'vue'
 
 const STORAGE_KEY = 'marrooks:cart'
+
+function itemKey(productSlug, variantSlug) {
+  return `${productSlug}::${variantSlug ?? ''}`
+}
 
 function loadInitialItems() {
   try {
@@ -35,8 +39,10 @@ watch(
   { deep: true }
 )
 
-function addItem(product, quantity = 1) {
-  const existing = state.items.find((item) => item.slug === product.slug)
+// `variant` é opcional — produtos sem capas (ex: Estante) entram direto.
+function addItem(product, variant, quantity = 1) {
+  const key = itemKey(product.slug, variant?.slug)
+  const existing = state.items.find((item) => item.key === key)
 
   if (existing) {
     existing.quantity += quantity
@@ -44,25 +50,30 @@ function addItem(product, quantity = 1) {
   }
 
   state.items.push({
-    slug: product.slug,
-    name: product.name,
+    key,
+    productSlug: product.slug,
+    variantSlug: variant?.slug ?? null,
+    name: variant ? `${product.name} — ${variant.bookTitle}` : product.name,
+    bookTitle: variant?.bookTitle ?? null,
+    author: variant?.author ?? null,
+    series: variant?.series ?? null,
     price: product.price,
-    image: product.images?.[0]?.url ?? null,
+    image: variant?.image?.url ?? product.images?.[0]?.url ?? null,
     quantity,
   })
 }
 
-function removeItem(slug) {
-  const index = state.items.findIndex((item) => item.slug === slug)
+function removeItem(key) {
+  const index = state.items.findIndex((item) => item.key === key)
   if (index !== -1) state.items.splice(index, 1)
 }
 
-function updateQuantity(slug, quantity) {
-  const item = state.items.find((item) => item.slug === slug)
+function updateQuantity(key, quantity) {
+  const item = state.items.find((item) => item.key === key)
   if (!item) return
 
   if (quantity <= 0) {
-    removeItem(slug)
+    removeItem(key)
     return
   }
 
