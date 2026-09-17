@@ -58,14 +58,15 @@
           <tbody>
             <tr
               v-for="item in order.items"
-              :key="`${item.slug}-${item.variant?.bookTitle ?? ''}`"
+              :key="`${item.slug}-${item.variant?.name ?? ''}`"
             >
               <td>
                 {{ item.name }}
                 <span
                   v-if="item.variant"
                   class="variant-note"
-                >— {{ item.variant.bookTitle }} ({{ item.variant.author }})</span>
+                >— {{ item.variant.name }}<template v-if="item.variant.author"> ({{ item.variant.author
+                }})</template></span>
               </td>
               <td>{{ item.quantity }}</td>
               <td>{{ formatPrice(item.unitPrice) }}</td>
@@ -101,7 +102,8 @@
             class="cta"
             :disabled="saving"
             @click="handleUpdate"
-          >{{ saving ? 'Salvando...' : 'Atualizar' }}</button>
+          >{{ saving ? 'Salvando...' : 'Atualizar'
+          }}</button>
         </div>
         <p
           v-if="updateError"

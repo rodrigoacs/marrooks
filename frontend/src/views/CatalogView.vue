@@ -178,4 +178,10 @@ h1 {
 .state.error {
   color: var(--color-danger);
 }
+
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+}
 </style>

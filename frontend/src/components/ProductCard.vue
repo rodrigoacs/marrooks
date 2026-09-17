@@ -50,7 +50,11 @@ function formatPrice(value) {
 .card {
   display: block;
   text-decoration: none;
+  padding: var(--space-4);
   color: var(--color-text);
+  border: 2px solid var(--color-border-soft);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
 }
 
 .image-wrap {

@@ -277,8 +277,8 @@ function formatPrice(value) {
   return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-// O frete depende das dimensões do produto, não da capa — soma a
-// quantidade de capas diferentes do mesmo produto numa linha só.
+// O frete depende das dimensões do produto, não da variação — soma a
+// quantidade de variações diferentes do mesmo produto numa linha só.
 function aggregateByProduct(cartItems) {
   const totals = new Map()
   for (const item of cartItems) {

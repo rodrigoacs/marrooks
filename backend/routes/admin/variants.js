@@ -13,14 +13,17 @@ function mapVariant(row) {
   return {
     id: row.id,
     slug: row.slug,
+    name: row.name,
     series: row.series,
-    bookTitle: row.book_title,
     author: row.author,
     image: row.image_url ? { url: row.image_url, alt: row.image_alt } : null,
     active: row.active,
   }
 }
 
+// Série e autor são sempre opcionais aqui — quem decide se fazem sentido
+// pra um produto é o variant_kind do produto (validado na tela, não aqui),
+// não uma regra fixa por campo.
 function validatePayload(body, { partial } = {}) {
   const errors = {}
   const data = {}
@@ -32,22 +35,18 @@ function validatePayload(body, { partial } = {}) {
     }
   }
 
-  if (!partial || body.bookTitle !== undefined) {
-    data.bookTitle = body.bookTitle?.trim()
-    if (!data.bookTitle) errors.bookTitle = 'Informe o título do livro'
-  }
-
-  if (!partial || body.author !== undefined) {
-    data.author = body.author?.trim()
-    if (!data.author) errors.author = 'Informe o autor'
+  if (!partial || body.name !== undefined) {
+    data.name = body.name?.trim()
+    if (!data.name) errors.name = 'Informe o nome da variação'
   }
 
   if (body.series !== undefined) data.series = body.series?.trim() || null
+  if (body.author !== undefined) data.author = body.author?.trim() || null
   if (body.imageUrl !== undefined) data.imageUrl = body.imageUrl?.trim() || null
   if (body.imageAlt !== undefined) data.imageAlt = body.imageAlt?.trim() || null
   if (body.active !== undefined) data.active = Boolean(body.active)
 
-  if (Object.keys(errors).length > 0) throw badRequest('Dados da capa inválidos', errors)
+  if (Object.keys(errors).length > 0) throw badRequest('Dados da variação inválidos', errors)
 
   return data
 }
@@ -62,9 +61,9 @@ router.get('/', async (req, res) => {
   await assertProductExists(req.params.productId)
 
   const result = await query(
-    `SELECT id, slug, series, book_title, author, image_url, image_alt, active
+    `SELECT id, slug, series, name, author, image_url, image_alt, active
      FROM product_variants WHERE product_id = $1
-     ORDER BY series NULLS LAST, book_title`,
+     ORDER BY series NULLS LAST, name`,
     [req.params.productId]
   )
 
@@ -77,15 +76,15 @@ router.post('/', async (req, res) => {
   const data = validatePayload(req.body ?? {})
 
   const result = await query(
-    `INSERT INTO product_variants (product_id, slug, series, book_title, author, image_url, image_alt, active)
+    `INSERT INTO product_variants (product_id, slug, series, name, author, image_url, image_alt, active)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-     RETURNING id, slug, series, book_title, author, image_url, image_alt, active`,
+     RETURNING id, slug, series, name, author, image_url, image_alt, active`,
     [
       req.params.productId,
       data.slug,
       data.series ?? null,
-      data.bookTitle,
-      data.author,
+      data.name,
+      data.author ?? null,
       data.imageUrl ?? null,
       data.imageAlt ?? null,
       data.active ?? true,
@@ -103,7 +102,7 @@ router.patch('/:variantId', async (req, res) => {
   const fieldMap = {
     slug: 'slug',
     series: 'series',
-    bookTitle: 'book_title',
+    name: 'name',
     author: 'author',
     imageUrl: 'image_url',
     imageAlt: 'image_alt',
@@ -122,34 +121,34 @@ router.patch('/:variantId', async (req, res) => {
 
   if (sets.length === 0) {
     const existing = await query(
-      `SELECT id, slug, series, book_title, author, image_url, image_alt, active
+      `SELECT id, slug, series, name, author, image_url, image_alt, active
        FROM product_variants WHERE id = $1 AND product_id = $2`,
       [req.params.variantId, req.params.productId]
     )
-    if (existing.rows.length === 0) throw notFound('Capa não encontrada')
+    if (existing.rows.length === 0) throw notFound('Variação não encontrada')
     return res.json({ variant: mapVariant(existing.rows[0]) })
   }
 
   const result = await query(
     `UPDATE product_variants SET ${sets.join(', ')}
      WHERE id = $1 AND product_id = $2
-     RETURNING id, slug, series, book_title, author, image_url, image_alt, active`,
+     RETURNING id, slug, series, name, author, image_url, image_alt, active`,
     params
   )
 
-  if (result.rows.length === 0) throw notFound('Capa não encontrada')
+  if (result.rows.length === 0) throw notFound('Variação não encontrada')
   res.json({ variant: mapVariant(result.rows[0]) })
 })
 
 // DELETE /api/admin/products/:productId/variants/:variantId
-// Soft delete: desativa a capa (some do seletor de produto), preservando o
-// histórico de pedidos que já a referenciam.
+// Soft delete: desativa a variação (some do seletor de produto), preservando
+// o histórico de pedidos que já a referenciam.
 router.delete('/:variantId', async (req, res) => {
   const result = await query(
     'UPDATE product_variants SET active = FALSE WHERE id = $1 AND product_id = $2 RETURNING id',
     [req.params.variantId, req.params.productId]
   )
-  if (result.rows.length === 0) throw notFound('Capa não encontrada')
+  if (result.rows.length === 0) throw notFound('Variação não encontrada')
   res.status(204).end()
 })
 

@@ -1,7 +1,7 @@
 // Carrinho persistente em localStorage, sem dependência de Pinia/Vuex.
-// Cada item é a combinação produto + capa (quando o produto tem capas) —
-// a chave é productSlug + variantSlug, já que o mesmo produto pode estar
-// no carrinho várias vezes com capas diferentes.
+// Cada item é a combinação produto + variação (quando o produto tem
+// variações) — a chave é productSlug + variantSlug, já que o mesmo produto
+// pode estar no carrinho várias vezes com variações diferentes.
 
 import { computed, reactive, watch } from 'vue'
 
@@ -39,7 +39,7 @@ watch(
   { deep: true }
 )
 
-// `variant` é opcional — produtos sem capas (ex: Estante) entram direto.
+// `variant` é opcional — produtos sem variações (ex: Estante) entram direto.
 function addItem(product, variant, quantity = 1) {
   const key = itemKey(product.slug, variant?.slug)
   const existing = state.items.find((item) => item.key === key)
@@ -53,8 +53,8 @@ function addItem(product, variant, quantity = 1) {
     key,
     productSlug: product.slug,
     variantSlug: variant?.slug ?? null,
-    name: variant ? `${product.name} — ${variant.bookTitle}` : product.name,
-    bookTitle: variant?.bookTitle ?? null,
+    name: variant ? `${product.name} — ${variant.name}` : product.name,
+    variantName: variant?.name ?? null,
     author: variant?.author ?? null,
     series: variant?.series ?? null,
     price: product.price,

@@ -11,6 +11,7 @@ router.use(requireAdmin)
 router.use('/:productId/variants', adminVariantRoutes)
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const VARIANT_KINDS = ['simple', 'book']
 
 function mapProduct(row) {
   return {
@@ -23,6 +24,7 @@ function mapProduct(row) {
     comparePrice: row.compare_price,
     active: row.active,
     featured: row.featured,
+    variantKind: row.variant_kind,
     category: row.category_slug ? { slug: row.category_slug, name: row.category_name } : null,
     categoryId: row.category_id,
     dimensions: {
@@ -41,7 +43,7 @@ function mapProduct(row) {
 const BASE_SELECT = `
   SELECT
     p.id, p.slug, p.name, p.short_description, p.description,
-    p.price, p.compare_price, p.active, p.featured, p.category_id,
+    p.price, p.compare_price, p.active, p.featured, p.variant_kind, p.category_id,
     p.width, p.height, p.length, p.weight, p.created_at, p.updated_at,
     c.slug AS category_slug, c.name AS category_name,
     COALESCE(
@@ -94,6 +96,13 @@ function validatePayload(body, { partial } = {}) {
   if (body.active !== undefined) data.active = Boolean(body.active)
   if (body.featured !== undefined) data.featured = Boolean(body.featured)
 
+  if (!partial || body.variantKind !== undefined) {
+    data.variantKind = body.variantKind ?? 'simple'
+    if (!VARIANT_KINDS.includes(data.variantKind)) {
+      errors.variantKind = 'Tipo de variação inválido'
+    }
+  }
+
   for (const key of ['width', 'height', 'length', 'weight']) {
     if (body[key] !== undefined) {
       const value = Number(body[key])
@@ -141,8 +150,8 @@ router.post('/', async (req, res) => {
     const result = await client.query(
       `INSERT INTO products
          (slug, name, short_description, description, price, compare_price,
-          active, featured, category_id, width, height, length, weight)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+          active, featured, variant_kind, category_id, width, height, length, weight)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING id`,
       [
         data.slug,
@@ -153,6 +162,7 @@ router.post('/', async (req, res) => {
         data.comparePrice ?? null,
         data.active ?? true,
         data.featured ?? false,
+        data.variantKind ?? 'simple',
         data.categoryId ?? null,
         data.width ?? 11,
         data.height ?? 2,
@@ -193,6 +203,7 @@ router.patch('/:id', async (req, res) => {
     comparePrice: 'compare_price',
     active: 'active',
     featured: 'featured',
+    variantKind: 'variant_kind',
     categoryId: 'category_id',
     width: 'width',
     height: 'height',

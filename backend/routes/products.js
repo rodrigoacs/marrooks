@@ -15,6 +15,7 @@ function mapProduct(row) {
     price: row.price,
     comparePrice: row.compare_price,
     featured: row.featured,
+    variantKind: row.variant_kind,
     category: row.category_slug ? { slug: row.category_slug, name: row.category_name } : null,
     dimensions: {
       width: row.width,
@@ -29,8 +30,8 @@ function mapProduct(row) {
 function mapVariant(row) {
   return {
     slug: row.slug,
+    name: row.name,
     series: row.series,
-    bookTitle: row.book_title,
     author: row.author,
     image: row.image_url ? { url: row.image_url, alt: row.image_alt } : null,
   }
@@ -39,7 +40,7 @@ function mapVariant(row) {
 const BASE_SELECT = `
   SELECT
     p.id, p.slug, p.name, p.short_description, p.description,
-    p.price, p.compare_price, p.featured,
+    p.price, p.compare_price, p.featured, p.variant_kind,
     p.width, p.height, p.length, p.weight,
     c.slug AS category_slug, c.name AS category_name,
     COALESCE(
@@ -55,9 +56,9 @@ const BASE_SELECT = `
 `
 
 // GET /api/products?category=livros&search=harry+potter&featured=true
-// A busca também encontra produtos por uma capa correspondente (série,
-// livro ou autor) — assim o cliente acha o "Mini Livro" procurando
-// diretamente pelo título ou autor que quer, sem a capa virar um item
+// A busca também encontra produtos por uma variação correspondente (nome,
+// série ou autor) — assim o cliente acha o "Mini Livro" procurando
+// diretamente pelo título ou autor que quer, sem a variação virar um item
 // separado no catálogo.
 router.get('/', async (req, res) => {
   const { category, search, featured } = req.query
@@ -78,7 +79,7 @@ router.get('/', async (req, res) => {
       OR EXISTS (
         SELECT 1 FROM product_variants v
         WHERE v.product_id = p.id AND v.active = TRUE
-          AND (v.series ILIKE ${term} OR v.book_title ILIKE ${term} OR v.author ILIKE ${term})
+          AND (v.series ILIKE ${term} OR v.name ILIKE ${term} OR v.author ILIKE ${term})
       )
     )`)
   }
@@ -106,10 +107,10 @@ router.get('/:slug', async (req, res) => {
   const product = result.rows[0]
 
   const variantsResult = await query(
-    `SELECT slug, series, book_title, author, image_url, image_alt
+    `SELECT slug, name, series, author, image_url, image_alt
      FROM product_variants
      WHERE product_id = $1 AND active = TRUE
-     ORDER BY series NULLS LAST, book_title`,
+     ORDER BY series NULLS LAST, name`,
     [product.id]
   )
 

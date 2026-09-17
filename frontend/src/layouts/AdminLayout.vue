@@ -67,6 +67,12 @@ async function handleLogout() {
 .admin {
   min-height: 100vh;
   display: flex;
+  background: #ffffff;
+  /* Admin abre mão da paleta cream/serifada em favor de um fundo neutro —
+     essas variáveis cascateiam pra todas as telas dentro de .admin. */
+  --color-bg: #ffffff;
+  --color-surface: #f4f4f5;
+  --color-surface-solid: #ffffff;
 }
 
 .sidebar {
@@ -204,7 +210,7 @@ async function handleLogout() {
     flex: 1;
     justify-content: center;
     text-align: center;
-    background: var(--color-cream-100);
+    background: var(--color-surface);
   }
 
   .nav-link.router-link-active {

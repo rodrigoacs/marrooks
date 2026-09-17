@@ -40,7 +40,7 @@ router.get('/:reference', async (req, res) => {
   if (!order) throw notFound('Pedido não encontrado')
 
   const itemsResult = await query(
-    `SELECT product_name, product_slug, variant_series, variant_book_title, variant_author, unit_price, quantity
+    `SELECT product_name, product_slug, variant_series, variant_name, variant_author, unit_price, quantity
      FROM order_items WHERE order_id = $1`,
     [order.id]
   )
@@ -51,8 +51,8 @@ router.get('/:reference', async (req, res) => {
       items: itemsResult.rows.map((row) => ({
         name: row.product_name,
         slug: row.product_slug,
-        variant: row.variant_book_title
-          ? { series: row.variant_series, bookTitle: row.variant_book_title, author: row.variant_author }
+        variant: row.variant_name
+          ? { series: row.variant_series, name: row.variant_name, author: row.variant_author }
           : null,
         unitPrice: row.unit_price,
         quantity: row.quantity,

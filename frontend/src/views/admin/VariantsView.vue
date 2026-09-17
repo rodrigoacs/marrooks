@@ -5,11 +5,15 @@
       class="back"
     >&larr; Produtos</RouterLink>
 
-    <h1>Capas{{ productName ? ` — ${productName}` : '' }}</h1>
-    <p class="sub">Cada capa é um livro que aparece como opção pra escolher na página do produto.</p>
+    <h1>Variações{{ productName ? ` — ${productName}` : '' }}</h1>
+    <p class="sub">
+      {{ isBookProduct
+        ? 'Cada variação é um livro (série, título e autor) que aparece como opção na página do produto.'
+        : 'Cada variação aparece como opção pra escolher na página do produto.' }}
+    </p>
 
     <div class="add-form">
-      <p class="section-label">Nova capa</p>
+      <p class="section-label">Nova variação</p>
 
       <ImageUploadField
         :url="newVariant.imageUrl"
@@ -20,15 +24,18 @@
       />
 
       <label class="field">
-        <span>Livro</span>
+        <span>{{ isBookProduct ? 'Livro' : 'Nome da variação' }}</span>
         <input
-          v-model="newVariant.bookTitle"
+          v-model="newVariant.name"
           type="text"
           @input="syncSlug(newVariant)"
         />
       </label>
 
-      <div class="field-row">
+      <div
+        v-if="isBookProduct"
+        class="field-row"
+      >
         <label class="field">
           <span>Série (opcional)</span>
           <input
@@ -66,7 +73,7 @@
         class="cta"
         :disabled="adding"
         @click="handleAdd"
-      >{{ adding ? 'Adicionando...' : 'Adicionar capa' }}</button>
+      >{{ adding ? 'Adicionando...' : 'Adicionar variação' }}</button>
     </div>
 
     <p
@@ -80,7 +87,7 @@
     <p
       v-else-if="variants.length === 0"
       class="state"
-    >Nenhuma capa cadastrada ainda.</p>
+    >Nenhuma variação cadastrada ainda.</p>
 
     <ul
       v-else
@@ -95,18 +102,21 @@
           <img
             v-if="variant.image?.url"
             :src="variant.image.url"
-            :alt="variant.bookTitle"
+            :alt="variant.name"
             class="thumb"
           />
           <div
             v-else
             class="thumb thumb-fallback"
-          >{{ variant.bookTitle.charAt(0) }}</div>
+          >{{ variant.name.charAt(0) }}</div>
 
           <div class="variant-info">
-            <p class="variant-title">{{ variant.bookTitle }}</p>
-            <p class="variant-meta">
-              {{ variant.author }}<template v-if="variant.series"> · {{ variant.series }}</template>
+            <p class="variant-title">{{ variant.name }}</p>
+            <p
+              v-if="variant.author || variant.series"
+              class="variant-meta"
+            >
+              {{ variant.author }}<template v-if="variant.author && variant.series"> · </template>{{ variant.series }}
             </p>
             <span
               class="badge"
@@ -142,14 +152,17 @@
           />
 
           <label class="field">
-            <span>Livro</span>
+            <span>{{ isBookProduct ? 'Livro' : 'Nome da variação' }}</span>
             <input
-              v-model="editForm.bookTitle"
+              v-model="editForm.name"
               type="text"
             />
           </label>
 
-          <div class="field-row">
+          <div
+            v-if="isBookProduct"
+            class="field-row"
+          >
             <label class="field">
               <span>Série</span>
               <input
@@ -211,7 +224,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { adminProductsApi, adminVariantsApi, ApiError } from '../../lib/api'
 import ImageUploadField from '../../components/ImageUploadField.vue'
 
@@ -223,9 +236,12 @@ const props = defineProps({
 })
 
 const productName = ref('')
+const variantKind = ref('simple')
 const variants = ref([])
 const loading = ref(true)
 const error = ref('')
+
+const isBookProduct = computed(() => variantKind.value === 'book')
 
 const adding = ref(false)
 const addError = ref('')
@@ -246,7 +262,7 @@ function slugify(text) {
 
 function blankVariant() {
   return {
-    bookTitle: '',
+    name: '',
     slug: '',
     slugTouched: false,
     series: '',
@@ -260,7 +276,7 @@ const newVariant = reactive(blankVariant())
 
 function syncSlug(target) {
   if (!target.slugTouched) {
-    target.slug = slugify(target.bookTitle)
+    target.slug = slugify(target.name)
   }
 }
 
@@ -273,9 +289,10 @@ async function loadData() {
       adminVariantsApi.list(props.id),
     ])
     productName.value = productData.product.name
+    variantKind.value = productData.product.variantKind
     variants.value = variantsData.variants
   } catch (err) {
-    error.value = err instanceof ApiError ? err.message : 'Não foi possível carregar as capas.'
+    error.value = err instanceof ApiError ? err.message : 'Não foi possível carregar as variações.'
   } finally {
     loading.value = false
   }
@@ -284,11 +301,11 @@ async function loadData() {
 async function handleAdd() {
   addError.value = ''
 
-  if (!newVariant.bookTitle.trim()) {
-    addError.value = 'Informe o título do livro.'
+  if (!newVariant.name.trim()) {
+    addError.value = isBookProduct.value ? 'Informe o título do livro.' : 'Informe o nome da variação.'
     return
   }
-  if (!newVariant.author.trim()) {
+  if (isBookProduct.value && !newVariant.author.trim()) {
     addError.value = 'Informe o autor.'
     return
   }
@@ -296,17 +313,17 @@ async function handleAdd() {
   adding.value = true
   try {
     const data = await adminVariantsApi.create(props.id, {
-      slug: newVariant.slug || slugify(newVariant.bookTitle),
-      series: newVariant.series || null,
-      bookTitle: newVariant.bookTitle,
-      author: newVariant.author,
+      slug: newVariant.slug || slugify(newVariant.name),
+      series: isBookProduct.value ? newVariant.series || null : null,
+      name: newVariant.name,
+      author: isBookProduct.value ? newVariant.author || null : null,
       imageUrl: newVariant.imageUrl || null,
       imageAlt: newVariant.imageAlt || null,
     })
     variants.value.push(data.variant)
     Object.assign(newVariant, blankVariant())
   } catch (err) {
-    addError.value = err instanceof ApiError ? err.message : 'Não foi possível adicionar a capa.'
+    addError.value = err instanceof ApiError ? err.message : 'Não foi possível adicionar a variação.'
   } finally {
     adding.value = false
   }
@@ -316,10 +333,10 @@ function startEdit(variant) {
   editingId.value = variant.id
   editError.value = ''
   Object.assign(editForm, {
-    bookTitle: variant.bookTitle,
+    name: variant.name,
     slug: variant.slug,
     series: variant.series ?? '',
-    author: variant.author,
+    author: variant.author ?? '',
     imageUrl: variant.image?.url ?? '',
     imageAlt: variant.image?.alt ?? '',
     active: variant.active,
@@ -332,9 +349,9 @@ async function saveEdit(variantId) {
   try {
     const data = await adminVariantsApi.update(props.id, variantId, {
       slug: editForm.slug,
-      series: editForm.series || null,
-      bookTitle: editForm.bookTitle,
-      author: editForm.author,
+      series: isBookProduct.value ? editForm.series || null : null,
+      name: editForm.name,
+      author: isBookProduct.value ? editForm.author || null : null,
       imageUrl: editForm.imageUrl || null,
       imageAlt: editForm.imageAlt || null,
       active: editForm.active,
@@ -343,19 +360,19 @@ async function saveEdit(variantId) {
     if (index !== -1) variants.value[index] = data.variant
     editingId.value = null
   } catch (err) {
-    editError.value = err instanceof ApiError ? err.message : 'Não foi possível salvar a capa.'
+    editError.value = err instanceof ApiError ? err.message : 'Não foi possível salvar a variação.'
   } finally {
     saving.value = false
   }
 }
 
 async function handleDeactivate(variant) {
-  if (!confirm(`Desativar a capa "${variant.bookTitle}"?`)) return
+  if (!confirm(`Desativar a variação "${variant.name}"?`)) return
   try {
     await adminVariantsApi.remove(props.id, variant.id)
     variant.active = false
   } catch (err) {
-    alert(err instanceof ApiError ? err.message : 'Não foi possível desativar a capa.')
+    alert(err instanceof ApiError ? err.message : 'Não foi possível desativar a variação.')
   }
 }
 
@@ -364,10 +381,9 @@ onMounted(loadData)
 
 <style scoped>
 .back {
-  display: inline-block;
-  min-height: 44px;
   display: inline-flex;
   align-items: center;
+  min-height: 44px;
   margin-bottom: var(--space-3);
   color: var(--color-primary);
   font-weight: var(--weight-semibold);
@@ -411,6 +427,16 @@ h1 {
 
 .field-row>* {
   min-width: 140px;
+}
+
+@media (max-width: 480px) {
+  .field-row {
+    flex-direction: column;
+  }
+
+  .field-row>* {
+    min-width: 100%;
+  }
 }
 
 .field {
@@ -526,7 +552,7 @@ h1 {
 }
 
 .thumb-fallback {
-  background: var(--color-cream-100);
+  background: var(--color-surface);
   display: flex;
   align-items: center;
   justify-content: center;

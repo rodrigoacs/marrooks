@@ -31,7 +31,7 @@
             <th>Produto</th>
             <th>Categoria</th>
             <th>Preço</th>
-            <th>Capas</th>
+            <th>Variações</th>
             <th>Status</th>
             <th></th>
           </tr>
@@ -61,8 +61,8 @@
             <td>{{ product.category?.name ?? '—' }}</td>
             <td>{{ formatPrice(product.price) }}</td>
             <td>
-              <RouterLink :to="`/admin/produtos/${product.id}/capas`">{{ product.variantCount }} capa{{
-                product.variantCount === 1 ? '' : 's' }}</RouterLink>
+              <RouterLink :to="`/admin/produtos/${product.id}/variacoes`">{{ product.variantCount }} variaç{{
+                product.variantCount === 1 ? 'ão' : 'ões' }}</RouterLink>
             </td>
             <td>
               <span
@@ -210,7 +210,7 @@ h1 {
 }
 
 .image-fallback {
-  background: var(--color-cream-100);
+  background: var(--color-surface);
   display: flex;
   align-items: center;
   justify-content: center;

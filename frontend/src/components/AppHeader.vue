@@ -6,12 +6,10 @@
         class="brand"
       >
         <img
-          src="/logo.png"
+          src="/marrooks-logo-livro-unico.svg"
           alt="Marrooks"
         />
-        <span>Marrooks</span>
       </RouterLink>
-
       <nav class="nav">
         <RouterLink
           to="/catalogo"
@@ -27,33 +25,33 @@
           to="/entrar"
           class="nav-link"
         >Entrar</RouterLink>
-      </nav>
 
-      <RouterLink
-        to="/carrinho"
-        class="cart-link"
-        aria-label="Ver carrinho"
-      >
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+        <RouterLink
+          to="/carrinho"
+          class="cart-link"
+          aria-label="Ver carrinho"
         >
-          <path
-            d="M3 4H5L5.4 6M5.4 6H20L18 13H7M5.4 6L7 13M7 13L5.6 15.6C5.2 16.3 5.7 17.2 6.5 17.2H18M9.5 21C10.3 21 11 20.3 11 19.5C11 18.7 10.3 18 9.5 18C8.7 18 8 18.7 8 19.5C8 20.3 8.7 21 9.5 21ZM18 21C18.8 21 19.5 20.3 19.5 19.5C19.5 18.7 18.8 18 18 18C17.2 18 16.5 18.7 16.5 19.5C16.5 20.3 17.2 21 18 21Z"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-        <span
-          v-if="itemCount > 0"
-          class="cart-count"
-        >{{ itemCount }}</span>
-      </RouterLink>
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M3 4H5L5.4 6M5.4 6H20L18 13H7M5.4 6L7 13M7 13L5.6 15.6C5.2 16.3 5.7 17.2 6.5 17.2H18M9.5 21C10.3 21 11 20.3 11 19.5C11 18.7 10.3 18 9.5 18C8.7 18 8 18.7 8 19.5C8 20.3 8.7 21 9.5 21ZM18 21C18.8 21 19.5 20.3 19.5 19.5C19.5 18.7 18.8 18 18 18C17.2 18 16.5 18.7 16.5 19.5C16.5 20.3 17.2 21 18 21Z"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span
+            v-if="itemCount > 0"
+            class="cart-count"
+          >{{ itemCount }}</span>
+        </RouterLink>
+      </nav>
     </div>
   </header>
 </template>
@@ -95,9 +93,8 @@ const { itemCount } = useCart()
 }
 
 .brand img {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
+  width: 280px;
+  height: 280px;
 }
 
 .brand span {
@@ -110,7 +107,6 @@ const { itemCount } = useCart()
   display: flex;
   align-items: center;
   gap: var(--space-6);
-  flex: 1;
 }
 
 .nav-link {
@@ -157,6 +153,15 @@ const { itemCount } = useCart()
 
   .brand span {
     display: none;
+  }
+
+  .brand img {
+    width: 120px;
+    height: 120px;
+  }
+
+  .nav {
+    gap: var(--space-2);
   }
 }
 </style>

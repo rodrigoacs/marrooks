@@ -17,7 +17,7 @@
       <img
         v-if="displayImage"
         :src="displayImage"
-        :alt="selectedVariant?.bookTitle ?? product.name"
+        :alt="selectedVariant?.name ?? product.name"
       />
       <div
         v-else
@@ -47,18 +47,21 @@
         v-if="product.variants.length > 0"
         class="variant-picker"
       >
-        <p class="section-label">Escolha a capa</p>
+        <p class="section-label">Escolha a variação</p>
         <input
           v-model="search"
           type="search"
-          placeholder="Buscar por livro, série ou autor..."
+          :placeholder="isBookProduct ? 'Buscar por livro, série ou autor...' : 'Buscar variação...'"
           class="search"
         />
 
         <p
           v-if="selectedVariant"
           class="selected-variant"
-        >Selecionado: <strong>{{ selectedVariant.bookTitle }}</strong> — {{ selectedVariant.author }}</p>
+        >
+          Selecionado: <strong>{{ selectedVariant.name }}</strong>
+          <template v-if="selectedVariant.author"> — {{ selectedVariant.author }}</template>
+        </p>
 
         <div class="variant-list">
           <button
@@ -72,16 +75,19 @@
             <img
               v-if="variant.image?.url"
               :src="variant.image.url"
-              :alt="variant.bookTitle"
+              :alt="variant.name"
             />
             <div
               v-else
               class="variant-image-fallback"
-            >{{ variant.bookTitle.charAt(0) }}</div>
+            >{{ variant.name.charAt(0) }}</div>
             <span class="variant-info">
-              <span class="variant-title">{{ variant.bookTitle }}</span>
-              <span class="variant-meta">
-                {{ variant.author }}<template v-if="variant.series"> · {{ variant.series }}</template>
+              <span class="variant-title">{{ variant.name }}</span>
+              <span
+                v-if="variant.author || variant.series"
+                class="variant-meta"
+              >
+                {{ variant.author }}<template v-if="variant.author && variant.series"> · </template>{{ variant.series }}
               </span>
             </span>
           </button>
@@ -89,7 +95,7 @@
           <p
             v-if="filteredVariants.length === 0"
             class="no-results"
-          >Nenhuma capa encontrada.</p>
+          >Nenhuma variação encontrada.</p>
         </div>
       </div>
 
@@ -138,13 +144,15 @@ const selectedVariant = ref(null)
 
 const { addItem } = useCart()
 
+const isBookProduct = computed(() => product.value?.variantKind === 'book')
+
 const filteredVariants = computed(() => {
   if (!product.value) return []
   const term = search.value.trim().toLowerCase()
   if (!term) return product.value.variants
 
   return product.value.variants.filter((variant) =>
-    [variant.bookTitle, variant.author, variant.series]
+    [variant.name, variant.author, variant.series]
       .filter(Boolean)
       .some((field) => field.toLowerCase().includes(term))
   )
@@ -203,12 +211,6 @@ watch(() => props.slug, loadProduct)
   grid-template-columns: 1fr 1fr;
   gap: var(--space-8);
   align-items: start;
-}
-
-@media (max-width: 720px) {
-  .product {
-    grid-template-columns: 1fr;
-  }
 }
 
 .image-wrap {
@@ -407,5 +409,20 @@ h1 {
 .cta:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+/* Precisa vir por último no arquivo: como tem a mesma especificidade da
+   regra base .image-wrap, se viesse antes dela seria sobrescrita mesmo
+   dentro do breakpoint — foi exatamente esse bug que deixou a imagem
+   grande e "sticky" no celular. */
+@media (max-width: 720px) {
+  .product {
+    grid-template-columns: 1fr;
+  }
+
+  .image-wrap {
+    aspect-ratio: 4 / 3;
+    position: static;
+  }
 }
 </style>

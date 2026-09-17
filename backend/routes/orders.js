@@ -54,7 +54,7 @@ router.post('/', requireAuth, async (req, res) => {
     throw badRequest('Frete inválido — calcule novamente')
   }
 
-  // Deduplica por produto+capa e valida quantidades antes de tocar no banco.
+  // Deduplica por produto+variação e valida quantidades antes de tocar no banco.
   const requested = new Map()
   for (const item of items) {
     const productSlug = item?.productSlug
@@ -82,7 +82,7 @@ router.post('/', requireAuth, async (req, res) => {
   const variantSlugs = [...requested.values()].filter((item) => item.variantSlug).map((item) => item.variantSlug)
   const variantsResult = variantSlugs.length
     ? await query(
-      `SELECT id, product_id, slug, series, book_title, author
+      `SELECT id, product_id, slug, series, name, author
          FROM product_variants WHERE slug = ANY($1) AND active = TRUE`,
       [variantSlugs]
     )
@@ -96,7 +96,7 @@ router.post('/', requireAuth, async (req, res) => {
     let variant = null
     if (variantSlug) {
       variant = variantsByKey.get(`${product.id}::${variantSlug}`)
-      if (!variant) throw badRequest(`Capa "${variantSlug}" não está mais disponível para "${product.name}"`)
+      if (!variant) throw badRequest(`Variação "${variantSlug}" não está mais disponível para "${product.name}"`)
     }
 
     return {
@@ -107,7 +107,7 @@ router.post('/', requireAuth, async (req, res) => {
       unitPrice: product.price,
       quantity,
       variantSeries: variant?.series ?? null,
-      variantBookTitle: variant?.book_title ?? null,
+      variantName: variant?.name ?? null,
       variantAuthor: variant?.author ?? null,
     }
   })
@@ -154,7 +154,7 @@ router.post('/', requireAuth, async (req, res) => {
       await client.query(
         `INSERT INTO order_items
            (order_id, product_id, product_variant_id, product_name, product_slug,
-            variant_series, variant_book_title, variant_author, unit_price, quantity)
+            variant_series, variant_name, variant_author, unit_price, quantity)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
         [
           orderResult.rows[0].id,
@@ -163,7 +163,7 @@ router.post('/', requireAuth, async (req, res) => {
           item.name,
           item.slug,
           item.variantSeries,
-          item.variantBookTitle,
+          item.variantName,
           item.variantAuthor,
           item.unitPrice,
           item.quantity,
@@ -188,7 +188,7 @@ router.get('/:reference', requireAuth, async (req, res) => {
   }
 
   const itemsResult = await query(
-    `SELECT product_name, product_slug, variant_series, variant_book_title, variant_author, unit_price, quantity
+    `SELECT product_name, product_slug, variant_series, variant_name, variant_author, unit_price, quantity
      FROM order_items WHERE order_id = $1`,
     [order.id]
   )
@@ -199,8 +199,8 @@ router.get('/:reference', requireAuth, async (req, res) => {
       items: itemsResult.rows.map((row) => ({
         name: row.product_name,
         slug: row.product_slug,
-        variant: row.variant_book_title
-          ? { series: row.variant_series, bookTitle: row.variant_book_title, author: row.variant_author }
+        variant: row.variant_name
+          ? { series: row.variant_series, name: row.variant_name, author: row.variant_author }
           : null,
         unitPrice: row.unit_price,
         quantity: row.quantity,

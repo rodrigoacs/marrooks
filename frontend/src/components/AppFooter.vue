@@ -15,6 +15,7 @@ const year = new Date().getFullYear()
 .footer {
   border-top: 1.5px dashed var(--color-border-dashed);
   margin-top: var(--space-10);
+  background: var(--color-bg);
 }
 
 .footer-inner {

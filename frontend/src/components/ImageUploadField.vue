@@ -57,7 +57,7 @@
       <input
         :value="alt"
         type="text"
-        placeholder="ex: capa do livro Corte de Espinhos e Rosas"
+        placeholder="ex: Corte de Espinhos e Rosas"
         @input="$emit('update:alt', $event.target.value)"
       />
     </label>
@@ -151,8 +151,8 @@ function handleRemove() {
   align-items: center;
   justify-content: center;
   gap: var(--space-1);
-  min-height: 120px;
-  padding: var(--space-5);
+  min-height: 88px;
+  padding: var(--space-3) var(--space-4);
   border: 2px dashed var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
@@ -166,6 +166,11 @@ function handleRemove() {
 .dropzone:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+.dropzone svg {
+  width: 22px;
+  height: 22px;
 }
 
 .dropzone .hint {
@@ -182,8 +187,8 @@ function handleRemove() {
 }
 
 .preview img {
-  width: 88px;
-  height: 88px;
+  width: 64px;
+  height: 64px;
   object-fit: cover;
   border-radius: var(--radius-md);
   border: 1.5px solid var(--color-border-soft);

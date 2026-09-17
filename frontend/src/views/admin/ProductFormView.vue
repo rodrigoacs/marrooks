@@ -80,6 +80,14 @@
         </select>
       </label>
 
+      <label class="field">
+        <span>Tipo de variação</span>
+        <select v-model="form.variantKind">
+          <option value="simple">Simples (nome e imagem)</option>
+          <option value="book">Livro (série, título e autor)</option>
+        </select>
+      </label>
+
       <div class="field-row checkboxes">
         <label class="checkbox">
           <input
@@ -167,12 +175,12 @@
         v-if="isEditing"
         class="variants-callout"
       >
-        <p class="section-label">Capas</p>
-        <p class="muted">Cada capa (livro/série/autor) é gerenciada numa tela própria.</p>
+        <p class="section-label">Variações</p>
+        <p class="muted">Cada variação é gerenciada numa tela própria.</p>
         <RouterLink
-          :to="`/admin/produtos/${id}/capas`"
+          :to="`/admin/produtos/${id}/variacoes`"
           class="link-btn"
-        >Gerenciar capas &rarr;</RouterLink>
+        >Gerenciar variações &rarr;</RouterLink>
       </div>
 
       <p
@@ -225,6 +233,7 @@ const form = reactive({
   price: '',
   comparePrice: '',
   categoryId: null,
+  variantKind: 'simple',
   active: true,
   featured: false,
   width: 11,
@@ -258,6 +267,7 @@ function buildPayload() {
     price: form.price,
     comparePrice: form.comparePrice === '' ? null : form.comparePrice,
     categoryId: form.categoryId,
+    variantKind: form.variantKind,
     active: form.active,
     featured: form.featured,
     width: form.width,
@@ -304,6 +314,7 @@ onMounted(async () => {
       form.price = product.price
       form.comparePrice = product.comparePrice ?? ''
       form.categoryId = product.categoryId
+      form.variantKind = product.variantKind
       form.active = product.active
       form.featured = product.featured
       form.width = product.dimensions.width
@@ -348,6 +359,16 @@ h1 {
 
 .field-row>* {
   min-width: 140px;
+}
+
+@media (max-width: 480px) {
+  .field-row {
+    flex-direction: column;
+  }
+
+  .field-row>* {
+    min-width: 100%;
+  }
 }
 
 .field {
