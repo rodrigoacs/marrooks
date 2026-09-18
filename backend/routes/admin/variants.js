@@ -3,11 +3,10 @@ import express from 'express'
 import { query } from '../../db/index.js'
 import { badRequest, notFound } from '../../lib/errors.js'
 
-// mergeParams: precisa enxergar o :productId definido no router pai
-// (routes/admin/products.js), já que é montado como sub-rota dele.
 const router = express.Router({ mergeParams: true })
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const SIZE_CATEGORIES = ['P', 'M', 'G']
 
 function mapVariant(row) {
   return {
@@ -17,13 +16,12 @@ function mapVariant(row) {
     series: row.series,
     author: row.author,
     image: row.image_url ? { url: row.image_url, alt: row.image_alt } : null,
+    pageCount: row.page_count,
+    sizeCategory: row.size_category,
     active: row.active,
   }
 }
 
-// Série e autor são sempre opcionais aqui — quem decide se fazem sentido
-// pra um produto é o variant_kind do produto (validado na tela, não aqui),
-// não uma regra fixa por campo.
 function validatePayload(body, { partial } = {}) {
   const errors = {}
   const data = {}
@@ -46,6 +44,29 @@ function validatePayload(body, { partial } = {}) {
   if (body.imageAlt !== undefined) data.imageAlt = body.imageAlt?.trim() || null
   if (body.active !== undefined) data.active = Boolean(body.active)
 
+  if (body.pageCount !== undefined) {
+    if (body.pageCount === null || body.pageCount === '') {
+      data.pageCount = null
+    } else {
+      const value = Number(body.pageCount)
+      if (!Number.isInteger(value) || value <= 0) {
+        errors.pageCount = 'Número de páginas inválido'
+      } else {
+        data.pageCount = value
+      }
+    }
+  }
+
+  if (body.sizeCategory !== undefined) {
+    if (body.sizeCategory === null || body.sizeCategory === '') {
+      data.sizeCategory = null
+    } else if (!SIZE_CATEGORIES.includes(body.sizeCategory)) {
+      errors.sizeCategory = 'Categoria inválida — use P, M ou G'
+    } else {
+      data.sizeCategory = body.sizeCategory
+    }
+  }
+
   if (Object.keys(errors).length > 0) throw badRequest('Dados da variação inválidos', errors)
 
   return data
@@ -61,7 +82,7 @@ router.get('/', async (req, res) => {
   await assertProductExists(req.params.productId)
 
   const result = await query(
-    `SELECT id, slug, series, name, author, image_url, image_alt, active
+    `SELECT id, slug, series, name, author, image_url, image_alt, page_count, size_category, active
      FROM product_variants WHERE product_id = $1
      ORDER BY series NULLS LAST, name`,
     [req.params.productId]
@@ -76,9 +97,10 @@ router.post('/', async (req, res) => {
   const data = validatePayload(req.body ?? {})
 
   const result = await query(
-    `INSERT INTO product_variants (product_id, slug, series, name, author, image_url, image_alt, active)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-     RETURNING id, slug, series, name, author, image_url, image_alt, active`,
+    `INSERT INTO product_variants
+       (product_id, slug, series, name, author, image_url, image_alt, page_count, size_category, active)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+     RETURNING id, slug, series, name, author, image_url, image_alt, page_count, size_category, active`,
     [
       req.params.productId,
       data.slug,
@@ -87,6 +109,8 @@ router.post('/', async (req, res) => {
       data.author ?? null,
       data.imageUrl ?? null,
       data.imageAlt ?? null,
+      data.pageCount ?? null,
+      data.sizeCategory ?? null,
       data.active ?? true,
     ]
   )
@@ -106,6 +130,8 @@ router.patch('/:variantId', async (req, res) => {
     author: 'author',
     imageUrl: 'image_url',
     imageAlt: 'image_alt',
+    pageCount: 'page_count',
+    sizeCategory: 'size_category',
     active: 'active',
   }
 
@@ -121,7 +147,7 @@ router.patch('/:variantId', async (req, res) => {
 
   if (sets.length === 0) {
     const existing = await query(
-      `SELECT id, slug, series, name, author, image_url, image_alt, active
+      `SELECT id, slug, series, name, author, image_url, image_alt, page_count, size_category, active
        FROM product_variants WHERE id = $1 AND product_id = $2`,
       [req.params.variantId, req.params.productId]
     )
@@ -132,7 +158,7 @@ router.patch('/:variantId', async (req, res) => {
   const result = await query(
     `UPDATE product_variants SET ${sets.join(', ')}
      WHERE id = $1 AND product_id = $2
-     RETURNING id, slug, series, name, author, image_url, image_alt, active`,
+     RETURNING id, slug, series, name, author, image_url, image_alt, page_count, size_category, active`,
     params
   )
 

@@ -184,18 +184,29 @@ select {
   border-radius: 999px;
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
-  background: rgba(81, 47, 24, 0.1);
-  color: var(--color-brown-700);
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--color-text-muted);
+}
+
+.badge.pending {
+  background: rgba(217, 119, 6, 0.14);
+  color: var(--color-warning);
 }
 
 .badge.paid,
+.badge.preparing,
+.badge.shipped {
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--color-info);
+}
+
 .badge.delivered {
-  background: rgba(179, 77, 43, 0.15);
-  color: var(--color-primary);
+  background: rgba(22, 163, 74, 0.12);
+  color: var(--color-success);
 }
 
 .badge.cancelled {
-  background: rgba(170, 51, 51, 0.12);
+  background: rgba(220, 38, 38, 0.12);
   color: var(--color-danger);
 }
 </style>

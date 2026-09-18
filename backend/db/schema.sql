@@ -47,12 +47,6 @@ CREATE TABLE IF NOT EXISTS product_images (
 
 CREATE INDEX IF NOT EXISTS idx_product_images_product ON product_images(product_id);
 
--- Cada produto (Mini Livro, Chaveiro, Estante, etc.) tem seu próprio
--- conjunto de "variações" — o que o cliente escolhe e compra de fato.
--- Série e autor só fazem sentido quando products.variant_kind = 'book';
--- pra variações simples (cor, modelo etc.) esses campos ficam nulos.
--- Não existe conceito de estoque na Marrooks (produção sob demanda) nem
--- preço por variação (todas custam o mesmo, o preço é do produto).
 CREATE TABLE IF NOT EXISTS product_variants (
   id SERIAL PRIMARY KEY,
   product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
@@ -62,6 +56,11 @@ CREATE TABLE IF NOT EXISTS product_variants (
   author TEXT,
   image_url TEXT,
   image_alt TEXT,
+  page_count INTEGER CHECK (
+    page_count IS NULL
+    OR page_count > 0
+  ),
+  size_category TEXT CHECK (size_category IN ('P', 'M', 'G')),
   active BOOLEAN NOT NULL DEFAULT TRUE,
   position INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -161,7 +160,6 @@ CREATE TABLE IF NOT EXISTS order_items (
     product_variant_id INTEGER REFERENCES product_variants(id) ON DELETE
   SET
     NULL,
-    -- Snapshot: o pedido não muda se o produto/variação for editada/removida depois
     product_name TEXT NOT NULL,
     product_slug TEXT NOT NULL,
     variant_series TEXT,
@@ -173,9 +171,6 @@ CREATE TABLE IF NOT EXISTS order_items (
 
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 
--- ---------- updated_at automático ----------
--- Corpo em aspas simples (e não $$) de propósito: sobrevive a
--- formatadores de SQL e a clientes que dividem o script por ";".
 CREATE
 OR REPLACE FUNCTION set_updated_at() RETURNS TRIGGER LANGUAGE plpgsql AS 'BEGIN NEW.updated_at = NOW(); RETURN NEW; END;';
 

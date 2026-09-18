@@ -5,7 +5,7 @@ import { MulterError } from 'multer'
 import { checkConnection } from './db/index.js'
 import { cookieParser } from './lib/cookies.js'
 import { HttpError, notFound } from './lib/errors.js'
-import { authenticate } from './middleware/auth.js'
+import { authenticate, requireAdmin } from './middleware/auth.js'
 import { UPLOADS_DIR } from './middleware/upload.js'
 import authRoutes from './routes/auth.js'
 import categoryRoutes from './routes/categories.js'
@@ -16,6 +16,7 @@ import shippingRoutes from './routes/shipping.js'
 import adminProductRoutes from './routes/admin/products.js'
 import adminOrderRoutes from './routes/admin/orders.js'
 import adminUploadRoutes from './routes/admin/uploads.js'
+import adminBookLookupRoutes from './routes/admin/book-lookup.js'
 
 const app = express()
 
@@ -39,6 +40,7 @@ app.use('/api/shipping', shippingRoutes)
 app.use('/api/admin/products', adminProductRoutes)
 app.use('/api/admin/orders', adminOrderRoutes)
 app.use('/api/admin/uploads', adminUploadRoutes)
+app.use('/api/admin/book-lookup', requireAdmin, adminBookLookupRoutes)
 
 app.get('/', (req, res) => {
   res.json({ status: 'Marrooks API rodando 🚀' })

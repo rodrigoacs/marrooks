@@ -68,11 +68,31 @@ async function handleLogout() {
   min-height: 100vh;
   display: flex;
   background: #ffffff;
-  /* Admin abre mão da paleta cream/serifada em favor de um fundo neutro —
-     essas variáveis cascateiam pra todas as telas dentro de .admin. */
   --color-bg: #ffffff;
   --color-surface: #f4f4f5;
   --color-surface-solid: #ffffff;
+
+  --color-text: #18181b;
+  --color-text-muted: #52525b;
+  --color-text-subtle: #71717a;
+  --color-brown-500: #a1a1aa;
+  --color-brown-600: #71717a;
+  --color-brown-700: #52525b;
+  --color-brown-800: #3f3f46;
+  --color-brown-900: #18181b;
+
+  --color-border: rgba(0, 0, 0, 0.14);
+  --color-border-soft: rgba(0, 0, 0, 0.09);
+  --color-border-dashed: rgba(0, 0, 0, 0.18);
+
+  --color-primary: #2563eb;
+  --color-primary-contrast: #ffffff;
+  --color-coral-500: #2563eb;
+
+  --color-danger: #dc2626;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-info: #2563eb;
 }
 
 .sidebar {
@@ -167,7 +187,8 @@ async function handleLogout() {
 .content {
   flex: 1;
   padding: var(--space-8) var(--space-9);
-  max-width: 1100px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 @media (max-width: 720px) {

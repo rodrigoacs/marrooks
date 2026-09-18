@@ -1,7 +1,3 @@
-// Cliente HTTP simples para o backend Marrooks.
-// Sem dependências externas — usa fetch nativo, cookie httpOnly (credentials: 'include')
-// e lança um erro com a mensagem vinda da API para o chamador tratar.
-
 const BASE_URL = '/api'
 
 class ApiError extends Error {
@@ -103,6 +99,10 @@ export const adminVariantsApi = {
   create: (productId, payload) => api.post(`/admin/products/${productId}/variants`, payload),
   update: (productId, variantId, payload) => api.patch(`/admin/products/${productId}/variants/${variantId}`, payload),
   remove: (productId, variantId) => api.delete(`/admin/products/${productId}/variants/${variantId}`),
+}
+
+export const adminBookLookupApi = {
+  search: (params) => api.get(`/admin/book-lookup${toQueryString(params)}`),
 }
 
 export const adminUploadsApi = {

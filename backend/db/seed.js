@@ -5,9 +5,6 @@ const categories = [
   { slug: 'acessorios', name: 'Acessórios', description: 'Chaveiros, skins e outros itens de papelaria.', position: 2 },
 ]
 
-// Catálogo completo de variações do tipo "livro" (nome/série/autor) —
-// cada produto tem seu próprio conjunto (linhas independentes no banco),
-// mas Mini Livro e Chaveiro de Mini Livro hoje compartilham a mesma lista.
 const allBookVariants = [
   // Corte de Espinhos e Rosas — Sarah J. Maas
   { series: 'Corte de Espinhos e Rosas', name: 'Corte de Espinhos e Rosas', author: 'Sarah J. Maas' },
@@ -79,10 +76,6 @@ const allBookVariants = [
   { series: 'Rostos Vazios', name: 'Exímio', author: 'Leonor Carvalho' },
 ]
 
-// Kit é variação "simples" (sem série/autor) — só o nome, mesmo reaproveitando
-// os títulos da lista de livros como rótulo.
-const kitVariantsAmostra = allBookVariants.slice(0, 4).map((variant) => ({ name: variant.name }))
-
 const products = [
   {
     slug: 'mini-livro',
@@ -102,40 +95,8 @@ const products = [
     variants: allBookVariants,
   },
   {
-    slug: 'mini-livro-estante-kit',
-    name: 'Mini Livro + Estante (Kit)',
-    categorySlug: 'livros',
-    shortDescription: 'O mini livro acompanhado da estante para exibir.',
-    description: 'Kit com o mini livro da variação escolhida mais uma estante para exibir sua coleção.',
-    price: 12.9,
-    featured: true,
-    variantKind: 'simple',
-    width: 12,
-    height: 6,
-    length: 8,
-    weight: 0.08,
-    images: [{ url: '/produtos/kit.jpg', alt: 'Kit mini livro com estante' }],
-    variants: kitVariantsAmostra,
-  },
-  {
-    slug: 'estante',
-    name: 'Estante',
-    categorySlug: 'livros',
-    shortDescription: 'Estante para exibir sua coleção de mini livros.',
-    description: 'Estante impressa em 3D, pensada para organizar e exibir os mini livros Marrooks.',
-    price: 9.9,
-    featured: false,
-    variantKind: 'simple',
-    width: 12,
-    height: 6,
-    length: 8,
-    weight: 0.06,
-    images: [{ url: '/produtos/estante.jpg', alt: 'Estante para mini livros' }],
-    variants: [],
-  },
-  {
-    slug: 'chaveiro-mini-livro',
-    name: 'Chaveiro de Mini Livro',
+    slug: 'chaveiro-livro',
+    name: 'Chaveiro Livro',
     categorySlug: 'acessorios',
     shortDescription: 'Leve seu livro favorito no chaveiro.',
     description: 'Mini livro em formato de chaveiro, com a mesma capa ilustrada dos livros da coleção.',
@@ -146,26 +107,44 @@ const products = [
     height: 1.5,
     length: 5,
     weight: 0.015,
-    images: [{ url: '/produtos/chaveiro.jpg', alt: 'Chaveiro de mini livro' }],
+    images: [{ url: '/produtos/chaveiro.jpg', alt: 'Chaveiro Livro' }],
     variants: allBookVariants,
   },
   {
-    slug: 'kindle-card-skin',
-    name: 'Card Skin Kindle',
+    slug: 'chaveiro-kindle',
+    name: 'Chaveiro Kindle',
     categorySlug: 'acessorios',
-    shortDescription: 'Skin adesiva para cartão de leitura.',
-    description: 'Adesivo em vinil com acabamento fosco, fácil de aplicar e remover sem deixar resíduo.',
-    price: 12,
+    shortDescription: 'Chaveiro com a capa do seu livro favorito, no estilo mini-kindle.',
+    description: 'Chaveiro em formato de leitor digital, com a mesma capa ilustrada dos livros da coleção.',
+    price: 6.9,
+    featured: false,
+    variantKind: 'book',
+    width: 4,
+    height: 1.5,
+    length: 5,
+    weight: 0.015,
+    images: [{ url: '/produtos/kindle-card-rosa.jpg', alt: 'Chaveiro Kindle' }],
+    variants: allBookVariants,
+  },
+  {
+    slug: 'estante',
+    name: 'Estante',
+    categorySlug: 'livros',
+    shortDescription: 'Estante para exibir sua coleção de mini livros.',
+    description: 'Estante impressa em 3D, pensada para organizar e exibir os mini livros Marrooks. Escolha o modelo.',
+    price: 9.9,
     featured: false,
     variantKind: 'simple',
-    width: 9,
-    height: 0.2,
-    length: 6,
-    weight: 0.01,
-    images: [{ url: '/produtos/kindle-card-rosa.jpg', alt: 'Kindle Card Skin' }],
+    width: 12,
+    height: 6,
+    length: 8,
+    weight: 0.06,
+    images: [{ url: '/produtos/estante.jpg', alt: 'Estante para mini livros' }],
     variants: [],
   },
 ]
+
+const removedProductSlugs = ['mini-livro-estante-kit', 'kindle-card-skin', 'chaveiro-mini-livro']
 
 async function seed() {
   const categoryIds = new Map()
@@ -182,6 +161,10 @@ async function seed() {
       [category.slug, category.name, category.description, category.position]
     )
     categoryIds.set(category.slug, result.rows[0].id)
+  }
+
+  for (const slug of removedProductSlugs) {
+    await query('DELETE FROM products WHERE slug = $1', [slug])
   }
 
   for (const product of products) {
