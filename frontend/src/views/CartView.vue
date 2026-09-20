@@ -15,7 +15,14 @@
       v-else
       class="content"
     >
-      <ul class="items">
+      <TransitionGroup
+        name="cart-item"
+        tag="ul"
+        class="items"
+        :css="false"
+        @enter="onEnter"
+        @leave="onLeave"
+      >
         <li
           v-for="(item, i) in items"
           :key="item.key"
@@ -54,7 +61,7 @@
             @click="removeItem(item.key)"
           >&times;</button>
         </li>
-      </ul>
+      </TransitionGroup>
 
       <div class="totals">
         <div class="row total">
@@ -72,12 +79,38 @@
 </template>
 
 <script setup>
+import gsap from 'gsap'
 import { useCart } from '../composables/useCart'
 
 const { items, subtotal, updateQuantity, removeItem } = useCart()
 
 function formatPrice(value) {
   return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+function onEnter(el, done) {
+  gsap.from(el, {
+    opacity: 0,
+    x: -24,
+    duration: 0.35,
+    ease: 'power2.out',
+    onComplete: done,
+  })
+}
+
+function onLeave(el, done) {
+  gsap.to(el, {
+    opacity: 0,
+    x: -24,
+    height: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
+    marginBottom: 0,
+    overflow: 'hidden',
+    duration: 0.32,
+    ease: 'power2.in',
+    onComplete: done,
+  })
 }
 </script>
 
@@ -110,6 +143,7 @@ h1 {
   list-style: none;
   margin: 0 0 var(--space-6);
   padding: 0;
+  position: relative;
 }
 
 .item {
@@ -121,6 +155,10 @@ h1 {
   margin-bottom: var(--space-2);
   box-shadow: var(--shadow-spine);
   color: var(--color-cream-100);
+}
+
+.cart-item-move {
+  transition: transform 0.3s ease;
 }
 
 .item.s1 {
@@ -170,6 +208,16 @@ h1 {
   font-size: var(--text-md);
   cursor: pointer;
   width: 18px;
+  border-radius: 4px;
+  transition: background-color 0.12s ease, transform 0.1s ease;
+}
+
+.qty-row button:hover {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.qty-row button:active {
+  transform: scale(0.85);
 }
 
 .price {
@@ -185,10 +233,16 @@ h1 {
   font-size: var(--text-lg);
   cursor: pointer;
   opacity: 0.7;
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
 .remove:hover {
   opacity: 1;
+  transform: scale(1.15);
+}
+
+.remove:active {
+  transform: scale(0.9);
 }
 
 .totals {
@@ -217,5 +271,15 @@ h1 {
   border-radius: var(--radius-md);
   font-weight: var(--weight-semibold);
   font-size: var(--text-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cta:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-spine);
+}
+
+.cta:active {
+  transform: translateY(0) scale(0.98);
 }
 </style>

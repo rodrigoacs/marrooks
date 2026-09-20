@@ -7,26 +7,26 @@
 
 :root {
   /* Paleta de marca */
-  --color-brown-900: #512f18;
-  /* marrom escuro — texto principal, contornos */
-  --color-terracotta-600: #c06e42;
-  /* terracota */
-  --color-rust-600: #b34d2b;
-  /* ferrugem — cor primária de CTA */
-  --color-coral-500: #d86841;
-  /* coral */
-  --color-cream-100: #fce0bd;
-  /* creme — fundo da página */
+  --color-brown-900: #2f4a2f;
+  /* verde escuro — texto principal, contornos */
+  --color-terracotta-600: #7fae82;
+  /* verde pastel médio */
+  --color-rust-600: #6b9e6f;
+  /* verde — cor primária de CTA */
+  --color-coral-500: #8fc19a;
+  /* verde pastel suave */
+  --color-cream-100: #e6f4e6;
+  /* verde bem claro — fundo da página */
 
-  /* Neutros derivados da paleta (tons de marrom usados em texto/apoio) */
-  --color-brown-700: #7a4e2b;
-  --color-brown-600: #8a5a32;
-  --color-brown-500: #9a6b44;
-  --color-brown-800: #6b4525;
+  /* Neutros derivados da paleta (tons de verde usados em texto/apoio) */
+  --color-brown-700: #4d6b4f;
+  --color-brown-600: #587a5c;
+  --color-brown-500: #6b8f6e;
+  --color-brown-800: #3d5c40;
 
   /* Superfícies */
   --color-bg: var(--color-cream-100);
-  --color-surface: #fff8ef;
+  --color-surface: #ffffff;
   /* cartões — ex.: bloco de pagamento */
   --color-surface-solid: #ffffff;
   /* inputs */
@@ -92,4 +92,5 @@
   /* Layout */
   --content-max-width: 960px;
   --header-height: 76px;
+  --announcement-height: 36px;
 }

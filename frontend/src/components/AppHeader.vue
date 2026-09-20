@@ -27,11 +27,36 @@
         >Entrar</RouterLink>
 
         <RouterLink
+          to="/favoritos"
+          class="cart-link"
+          aria-label="Ver favoritos"
+        >
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <path
+              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span
+            v-if="wishlistCount > 0"
+            class="cart-count"
+          >{{ wishlistCount }}</span>
+        </RouterLink>
+
+        <RouterLink
           to="/carrinho"
           class="cart-link"
           aria-label="Ver carrinho"
         >
           <svg
+            ref="cartIconRef"
             width="22"
             height="22"
             viewBox="0 0 24 24"
@@ -47,6 +72,7 @@
             />
           </svg>
           <span
+            ref="cartCountRef"
             v-if="itemCount > 0"
             class="cart-count"
           >{{ itemCount }}</span>
@@ -57,11 +83,39 @@
 </template>
 
 <script setup>
+import { nextTick, ref, watch } from 'vue'
+import gsap from 'gsap'
 import { useAuth } from '../composables/useAuth'
 import { useCart } from '../composables/useCart'
+import { useWishlist } from '../composables/useWishlist'
 
 const { isAuthenticated } = useAuth()
 const { itemCount } = useCart()
+const { wishlistCount } = useWishlist()
+
+const cartIconRef = ref(null)
+const cartCountRef = ref(null)
+
+watch(itemCount, async (value, oldValue) => {
+  if (value <= oldValue) return
+
+  if (cartIconRef.value) {
+    gsap.fromTo(
+      cartIconRef.value,
+      { scale: 1, rotate: 0 },
+      { scale: 1.3, rotate: -8, duration: 0.18, ease: 'power2.out', yoyo: true, repeat: 1 }
+    )
+  }
+
+  await nextTick()
+  if (cartCountRef.value) {
+    gsap.fromTo(
+      cartCountRef.value,
+      { scale: 0 },
+      { scale: 1, duration: 0.5, ease: 'elastic.out(1, 0.5)' }
+    )
+  }
+})
 </script>
 
 <style scoped>
@@ -69,7 +123,7 @@ const { itemCount } = useCart()
   border-bottom: 1.5px solid var(--color-border-soft);
   background: var(--color-bg);
   position: sticky;
-  top: 0;
+  top: var(--announcement-height);
   z-index: 10;
 }
 
@@ -93,8 +147,8 @@ const { itemCount } = useCart()
 }
 
 .brand img {
-  width: 280px;
-  height: 280px;
+  width: 250px;
+  height: 44px;
 }
 
 .brand span {
@@ -110,10 +164,29 @@ const { itemCount } = useCart()
 }
 
 .nav-link {
+  position: relative;
   text-decoration: none;
   color: var(--color-text-muted);
   font-size: var(--text-md);
   font-weight: var(--weight-medium);
+  transition: color 0.15s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -4px;
+  height: 2px;
+  background: var(--color-primary);
+  border-radius: 999px;
+  transition: right 0.2s ease;
+}
+
+.nav-link:hover::after,
+.nav-link.router-link-active::after {
+  right: 0;
 }
 
 .nav-link.router-link-active {
@@ -127,6 +200,11 @@ const { itemCount } = useCart()
   justify-content: center;
   color: var(--color-text);
   text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.cart-link:hover {
+  color: var(--color-primary);
 }
 
 .cart-count {
@@ -156,8 +234,8 @@ const { itemCount } = useCart()
   }
 
   .brand img {
-    width: 120px;
-    height: 120px;
+    width: 125px;
+    height: 36px;
   }
 
   .nav {

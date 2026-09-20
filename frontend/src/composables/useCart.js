@@ -1,8 +1,3 @@
-// Carrinho persistente em localStorage, sem dependência de Pinia/Vuex.
-// Cada item é a combinação produto + variação (quando o produto tem
-// variações) — a chave é productSlug + variantSlug, já que o mesmo produto
-// pode estar no carrinho várias vezes com variações diferentes.
-
 import { computed, reactive, watch } from 'vue'
 
 const STORAGE_KEY = 'marrooks:cart'
@@ -11,12 +6,29 @@ function itemKey(productSlug, variantSlug) {
   return `${productSlug}::${variantSlug ?? ''}`
 }
 
+function sanitizeItems(rawItems) {
+  const seenKeys = new Set()
+  const sanitized = []
+
+  for (const item of rawItems) {
+    if (!item || typeof item !== 'object' || !item.productSlug) continue
+
+    const key = itemKey(item.productSlug, item.variantSlug)
+    if (seenKeys.has(key)) continue
+    seenKeys.add(key)
+
+    sanitized.push({ ...item, key })
+  }
+
+  return sanitized
+}
+
 function loadInitialItems() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
+    return Array.isArray(parsed) ? sanitizeItems(parsed) : []
   } catch {
     return []
   }
@@ -32,14 +44,11 @@ watch(
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
     } catch {
-      // localStorage indisponível (modo privado, quota etc.) — carrinho
-      // segue funcionando só em memória para a sessão atual.
     }
   },
   { deep: true }
 )
 
-// `variant` é opcional — produtos sem variações (ex: Estante) entram direto.
 function addItem(product, variant, quantity = 1) {
   const key = itemKey(product.slug, variant?.slug)
   const existing = state.items.find((item) => item.key === key)

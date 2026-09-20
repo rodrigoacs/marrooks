@@ -27,6 +27,11 @@ const routes = [
       },
       { path: 'carrinho', name: 'cart', component: () => import('../views/CartView.vue') },
       {
+        path: 'favoritos',
+        name: 'wishlist',
+        component: () => import('../views/WishlistView.vue'),
+      },
+      {
         path: 'checkout',
         name: 'checkout',
         component: () => import('../views/CheckoutView.vue'),
@@ -93,8 +98,10 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior() {
-    return { top: 0 }
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.path === from.path) return false
+    return { top: 0, behavior: 'smooth' }
   },
 })
 

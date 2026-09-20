@@ -1,4 +1,5 @@
 <template>
+  <AnnouncementBar />
   <AppHeader />
   <main class="main">
     <RouterView />
@@ -7,6 +8,7 @@
 </template>
 
 <script setup>
+import AnnouncementBar from '../components/AnnouncementBar.vue'
 import AppHeader from '../components/AppHeader.vue'
 import AppFooter from '../components/AppFooter.vue'
 </script>

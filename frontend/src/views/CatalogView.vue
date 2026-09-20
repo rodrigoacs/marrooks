@@ -25,37 +25,66 @@
         placeholder="Buscar..."
         class="search"
       />
+
+      <select
+        v-model="sort"
+        class="sort"
+        aria-label="Ordenar por"
+      >
+        <option value="relevance">Relevância</option>
+        <option value="best_selling">Mais vendidos</option>
+        <option value="price_asc">Menor preço</option>
+        <option value="price_desc">Maior preço</option>
+        <option value="name_asc">Nome (A–Z)</option>
+        <option value="newest">Novidades</option>
+      </select>
     </div>
 
-    <p
-      v-if="loading"
-      class="state"
-    >Carregando...</p>
-    <p
-      v-else-if="error"
-      class="state error"
-    >{{ error }}</p>
-    <p
-      v-else-if="products.length === 0"
-      class="state"
-    >Nenhum produto encontrado.</p>
-
-    <div
-      v-else
-      class="grid"
+    <Transition
+      name="fade"
+      mode="out-in"
     >
-      <ProductCard
-        v-for="product in products"
-        :key="product.slug"
-        :product="product"
-      />
-    </div>
+      <div
+        v-if="loading"
+        key="loading"
+        class="grid"
+      >
+        <ProductCardSkeleton
+          v-for="n in 8"
+          :key="n"
+        />
+      </div>
+      <p
+        v-else-if="error"
+        key="error"
+        class="state error"
+      >{{ error }}</p>
+      <p
+        v-else-if="products.length === 0"
+        key="empty"
+        class="state"
+      >Nenhum produto encontrado.</p>
+
+      <div
+        v-else
+        key="grid"
+        class="grid"
+      >
+        <ProductCard
+          v-for="(product, index) in products"
+          :key="product.slug"
+          :product="product"
+          :index="index"
+        />
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import ProductCard from '../components/ProductCard.vue'
+import ProductCardSkeleton from '../components/ProductCardSkeleton.vue'
 import { categoriesApi, productsApi } from '../lib/api'
 
 const props = defineProps({
@@ -68,6 +97,7 @@ const props = defineProps({
 const products = ref([])
 const categories = ref([])
 const search = ref('')
+const sort = ref('relevance')
 const loading = ref(true)
 const error = ref('')
 
@@ -85,6 +115,7 @@ async function loadProducts() {
     const data = await productsApi.list({
       category: props.category || undefined,
       search: search.value || undefined,
+      sort: sort.value !== 'relevance' ? sort.value : undefined,
     })
     products.value = data.products
   } catch {
@@ -105,6 +136,7 @@ onMounted(async () => {
 })
 
 watch(() => props.category, loadProducts)
+watch(sort, loadProducts)
 
 watch(search, () => {
   clearTimeout(searchDebounce)
@@ -146,6 +178,14 @@ h1 {
   border: 1.5px solid var(--color-border);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+  transform: translateY(-1px);
 }
 
 .chip.active {
@@ -163,6 +203,31 @@ h1 {
   font-size: var(--text-sm);
   color: var(--color-text);
   min-width: 200px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search:focus-visible {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 12%, transparent);
+  outline: none;
+}
+
+.sort {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface-solid);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sort:focus-visible {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 12%, transparent);
+  outline: none;
 }
 
 .grid {
@@ -183,5 +248,15 @@ h1 {
   .grid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
